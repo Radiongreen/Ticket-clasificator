@@ -359,8 +359,7 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
-        const appId = firebaseConfig.projectId;
-
+        
         let userId = null;
         let allPurchases = [];
         let selectedPurchases = new Set();
@@ -573,7 +572,7 @@
         
         function loadInitialData() {
             if (!userId) return;
-            const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
+            const purchasesCol = collection(db, `users/${userId}/compras`);
             onSnapshot(purchasesCol, (snapshot) => {
                 allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 selectedPurchases.clear();
@@ -796,7 +795,7 @@
             const productNameLower = productNameToUpdate.toLowerCase().trim();
             const batch = writeBatch(db);
             allPurchases.filter(p => p.items.some(item => item.producto.toLowerCase().trim() === productNameLower)).forEach(purchase => {
-                const docRef = doc(db, `artifacts/${appId}/users/${userId}/compras`, purchase.id);
+                const docRef = doc(db, `users/${userId}/compras`, purchase.id);
                 const newItems = purchase.items.map(item => item.producto.toLowerCase().trim() === productNameLower ? { ...item, categoria_principal: newMainCategory, sub_categoria: newSubCategory } : item);
                 batch.update(docRef, { items: newItems });
             });
@@ -874,7 +873,7 @@
                     
                     const purchaseToSave = { ...currentPurchaseData, receiptUrl: downloadURL, receiptPath: storageRef.fullPath };
                     
-                    const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
+                    const purchasesCol = collection(db, `users/${userId}/compras`);
                     await addDoc(purchasesCol, purchaseToSave);
                     
                     showMessage("Éxito", "La compra ha sido guardada correctamente.");
@@ -954,7 +953,7 @@
 
                 for (const id of selectedPurchases) {
                     const purchaseDoc = allPurchases.find(p => p.id === id);
-                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/compras`, id);
+                    const docRef = doc(db, `users/${userId}/compras`, id);
                     batch.delete(docRef);
 
                     if (purchaseDoc && purchaseDoc.receiptPath) {
