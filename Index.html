@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestión de Gastos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Estilos personalizados para mejorar la apariencia */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button {
+            padding: 1rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Estilos para el loader */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #4f46e5;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Estilos para el modal */
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        #app-content.hidden, #login-container.hidden {
+            display: none;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Dashboard de Gastos</h1>
+                <p class="text-gray-600 mt-1">Sube tus tickets, analiza tus gastos y toma el control de tus finanzas.</p>
+            </div>
+            <div id="auth-container"></div>
+        </header>
+
+        <!-- Contenedor de Login -->
+        <div id="login-container" class="text-center py-16">
+            <h2 class="text-2xl font-bold mb-4">Bienvenido a tu Gestor de Gastos</h2>
+            <p class="text-gray-600 mb-8">Inicia sesión con tu cuenta de Google para guardar y acceder a tus datos de forma segura.</p>
+            <button id="login-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                <i class="fab fa-google mr-2"></i> Iniciar sesión con Google
+            </button>
+        </div>
+        
+        <!-- Contenido principal de la App (oculto hasta login) -->
+        <div id="app-content" class="hidden">
+            <!-- Navegación por pestañas -->
+            <div class="mb-8 border-b border-gray-200">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button active" data-tab="analizar-ticket">
+                        <i class="fas fa-receipt mr-2"></i> Analizar Ticket
+                    </button>
+                    <button class="tab-button" data-tab="mis-gastos">
+                        <i class="fas fa-chart-pie mr-2"></i> Mis Gastos
+                    </button>
+                    <button class="tab-button" data-tab="mis-productos">
+                        <i class="fas fa-tag mr-2"></i> Mis Productos
+                    </button>
+                    <button class="tab-button" data-tab="analisis-precios">
+                        <i class="fas fa-chart-line mr-2"></i> Análisis de Precios
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Contenido de las pestañas -->
+            <main>
+                <!-- Pestaña: Analizar Ticket -->
+                <div id="analizar-ticket" class="tab-content active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">1. Sube tu Ticket</h2>
+                            <div id="image-uploader" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <i class="fas fa-camera fa-3x text-gray-400"></i>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                            <span>Sube un archivo</span>
+                                            <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*">
+                                        </label>
+                                        <p class="pl-1">o arrástralo aquí</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                                </div>
+                            </div>
+                            <button id="process-ticket-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400" disabled>
+                                <i class="fas fa-cogs mr-2"></i> Procesar Ticket
+                            </button>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">2. Vista Previa</h2>
+                            <div id="image-preview-container" class="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                                <p>Aquí verás la imagen de tu ticket.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña: Mis Gastos -->
+                <div id="mis-gastos" class="tab-content">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                        <h2 class="text-xl font-semibold mb-4">Filtros</h2>
+                        <div class="flex flex-wrap gap-4">
+                            <select id="filter-year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
+                            <select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                            <h3 class="text-lg font-semibold mb-2">Gasto Total</h3>
+                            <p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                            <h3 class="text-lg font-semibold mb-2">Nº de Compras</h3>
+                            <p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Supermercado</h3>
+                            <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Categoría Principal</h3>
+                            <div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-lg font-semibold mb-4">Historial de Compras</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Fecha</th>
+                                        <th scope="col" class="px-6 py-3">Supermercado</th>
+                                        <th scope="col" class="px-6 py-3">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchases-history"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña: Mis Productos -->
+                <div id="mis-productos" class="tab-content">
+                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-xl font-semibold mb-4">Gestión de Productos</h2>
+                        <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado y corregir su categorización si es necesario. Los cambios se aplicarán a todas las compras pasadas.</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Producto</th>
+                                        <th scope="col" class="px-6 py-3">Categoría Principal</th>
+                                        <th scope="col" class="px-6 py-3">Sub-Categoría</th>
+                                        <th scope="col" class="px-6 py-3">Nº Compras</th>
+                                        <th scope="col" class="px-6 py-3">Tendencia de Precio</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña: Análisis de Precios -->
+                <div id="analisis-precios" class="tab-content">
+                    <div class="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+                        <i class="fas fa-tools fa-3x text-gray-400 mb-4"></i>
+                        <h2 class="text-2xl font-semibold">En Construcción</h2>
+                        <p class="text-gray-600 mt-2">Esta sección estará disponible próximamente para ofrecerte un análisis detallado de la evolución de los precios de tus productos.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Overlay de procesamiento -->
+    <div id="processing-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <div class="loader mx-auto"></div>
+            <p class="mt-4 text-lg font-medium">Analizando ticket con IA... Esto puede tardar un momento.</p>
+        </div>
+    </div>
+
+    <!-- Modal para mostrar mensajes genéricos -->
+    <div id="message-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto">
+            <h3 id="modal-title" class="text-lg font-bold"></h3>
+            <p id="modal-message" class="mt-2 text-sm text-gray-600"></p>
+            <div class="mt-4 text-right">
+                <button id="modal-close-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Ticket -->
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Confirmar Datos del Ticket</h3>
+                <p class="text-sm text-gray-600">Revisa los datos extraídos por la IA. Si son correctos, guárdalos.</p>
+            </div>
+            <div id="confirmation-content" class="p-6 overflow-y-auto"></div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                <button id="confirm-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Compra</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // Importaciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+        // --- CONFIGURACIÓN E INICIALIZACIÓN ---
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
+            authDomain: "tickets-clasificator.firebaseapp.com",
+            projectId: "tickets-clasificator",
+            storageBucket: "tickets-clasificator.appspot.com",
+            messagingSenderId: "929759305226",
+            appId: "1:929759305226:web:792b430618ae4a419a09f3",
+            measurementId: "G-FW5ER1GV03"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        // El appId para las rutas de la base de datos se puede tomar del projectId
+        const appId = firebaseConfig.projectId;
+
+        let userId = null;
+        let allPurchases = [];
+        let supermarketChart = null;
+        let categoryChart = null;
+        let currentPurchaseData = null; 
+
+        const categorias = {
+            "🍎 FRUTAS Y VERDURAS": ["Verduras", "Tubérculos", "Setas y hongos", "Frutas", "Frutos secos", "Legumbres", "Algas", "Germinados, Brotes y Flores"],
+            "🥚 HUEVOS, LÁCTEOS Y DERIVADOS": ["Leche", "Huevos", "Yogur", "Quesos", "Mantequilla", "Otros derivados lácteos", "Bebidas Vegetales"],
+            "🍚 CEREALES, ARROZ Y PASTA": ["Harinas", "Cereales", "Arroz", "Pasta"],
+            "🧂CONDIMENTOS Y ESPECIAS": ["Especias", "Salsas", "Condimentos", "Semillas"],
+            "🧈 ACEITES Y GRASAS": ["Aceites", "Vinagres", "Grasas", "Aceites de oliva", "Aceites vegetales"],
+            "🥫CONSERVAS": ["Conservas de pescado", "Conservas de carne", "Aceitunas y encurtidos", "Conservas de fruta", "Conservas vegetales"],
+            "❄️CONGELADOS": ["Hielo", "Vegetales congelados", "Carne congelada", "Pre-cocinados congelados", "Pescados y mariscos congelados", "Fruta congelada", "Helados"],
+            "🥖 REPOSTERÍA Y PANADERÍA": ["Panadería", "Bollería", "Tartas", "Chocolates", "Galletas", "Masas y Bizcochos", "Postres"],
+            "🍬SNACKS": ["Snacks dulces", "Snacks salados"],
+            "🐟 PESCADOS Y MARISCOS": ["Pescados", "Mariscos", "Crustáceos", "Moluscos"],
+            "🍖 CARNES": ["Aves", "Buey", "Carne de caza", "Cerdo", "Conejo", "Cordero", "Embutidos", "Ternera", "Vaca", "Derivados carne"],
+            "🍷 BEBIDAS": ["Refrescos", "Agua", "Café e Infusiones", "Zumos y Granizados", "Cerveza sin alcohol", "Licores", "Destilados", "Cerveza", "Vino", "Sidra"],
+            "🧹 LIMPIEZA": ["Productos de limpieza", "Utensilios de limpieza", "Servicios de limpieza"],
+            "🍳 MENAJE COCINA": ["Sartenes", "Ollas", "Paelleras", "Fiambreras", "Bandejas de horno", "Utensilios varios"],
+            "🚴 TAKE AWAY": ["Cajas", "Bolsas", "Tapas"],
+            "✉️ MATERIAL OFICINA": ["Papel", "Toner", "Servicios de copisteria"],
+            "🪑 MENAJE": ["Manteles", "Servilletas", "Vajilla", "Cubertería", "Cristalería", "Utensilios varios"],
+            "Promociones y Descuentos": ["Promociones y Descuentos"],
+            "Otros": ["Otros"]
+        };
+
+        // --- MANEJO DE AUTENTICACIÓN ---
+        const loginContainer = document.getElementById('login-container');
+        const appContent = document.getElementById('app-content');
+        const authContainer = document.getElementById('auth-container');
+        const loginBtn = document.getElementById('login-btn');
+
+        loginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    if (error.code === 'auth/unauthorized-domain') {
+                        showMessage(
+                            "Error de Configuración de Firebase", 
+                            "El dominio actual no está autorizado. Para solucionarlo, ve a tu proyecto de Firebase -> Authentication -> Sign-in method -> Google y añade el dominio desde el que ejecutas la app a la lista de 'Dominios autorizados'."
+                        );
+                    } else {
+                        console.error("Error al iniciar sesión con Google:", error);
+                        showMessage("Error de Autenticación", `No se pudo iniciar sesión con Google. Error: ${error.message}`);
+                    }
+                });
+        });
+
+        const handleSignOut = () => {
+            signOut(auth).catch((error) => {
+                console.error("Error al cerrar sesión:", error);
+                showMessage("Error", "No se pudo cerrar la sesión.");
+            });
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuario ha iniciado sesión
+                userId = user.uid;
+                loginContainer.classList.add('hidden');
+                appContent.classList.remove('hidden');
+
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <p class="font-semibold">${user.displayName}</p>
+                            <button id="logout-btn" class="text-sm text-red-500 hover:underline">Cerrar sesión</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', handleSignOut);
+                
+                loadInitialData();
+            } else {
+                // Usuario no ha iniciado sesión
+                userId = null;
+                loginContainer.classList.remove('hidden');
+                appContent.classList.add('hidden');
+                authContainer.innerHTML = '';
+                allPurchases = [];
+                renderDashboard(); // Limpiar el dashboard
+            }
+        });
+
+        function loadInitialData() {
+            if (!userId) return;
+            const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
+            onSnapshot(purchasesCol, (snapshot) => {
+                allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populateFilters();
+                renderDashboard();
+                renderProductsTab();
+            });
+        }
+
+        // --- NAVEGACIÓN POR PESTAÑAS ---
+        const tabs = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(item => item.classList.remove('active'));
+                tab.classList.add('active');
+                const target = tab.getAttribute('data-tab');
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === target) content.classList.add('active');
+                });
+            });
+        });
+        
+        // --- LÓGICA DE LA PESTAÑA "ANALIZAR TICKET" ---
+        const fileUpload = document.getElementById('file-upload');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const processBtn = document.getElementById('process-ticket-btn');
+        const processingOverlay = document.getElementById('processing-overlay');
+        let fileBase64 = null;
+
+        fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    fileBase64 = event.target.result.split(',')[1];
+                    imagePreviewContainer.innerHTML = `<img src="${event.target.result}" alt="Vista previa del ticket" class="max-h-full max-w-full object-contain rounded-lg">`;
+                    processBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!fileBase64) {
+                showMessage("Error", "Por favor, sube una imagen primero.");
+                return;
+            }
+            processingOverlay.classList.remove('hidden');
+            
+            try {
+                const result = await analyzeTicketWithAI(fileBase64);
+                currentPurchaseData = result; // Guardar datos para la confirmación
+                displayPurchaseConfirmation(result);
+            } catch (error) {
+                console.error("Error procesando el ticket:", error);
+                showMessage("Error de IA", `No se pudo analizar el ticket. Detalles: ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        });
+
+        async function analyzeTicketWithAI(base64ImageData) {
+            const apiKey = "AIzaSyCBek1Vt1x3h-fqPr1Vx2OWk_a1kICpi0c";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const prompt = `Analiza la imagen de este ticket de compra. Extrae la información y devuélvela ESTRICTAMENTE en formato JSON. La estructura debe ser: { "supermercado": "nombre", "fecha": "YYYY-MM-DD", "total": numero, "items": [...] }. Para cada item, extrae: { "producto": "nombre exacto del producto", "producto_generico": "nombre genérico, ej. 'Leche Entera' para 'Leche Entera Hacendado'", "cantidad": numero, "precio_unitario": numero, "categoria_principal": "...", "sub_categoria": "..." }. Usa las siguientes categorías y subcategorías ESTRICTAMENTE. No inventes ni alteres ninguna. Si un producto no encaja, usa "Otros" en ambas. Si hay un descuento o promoción, asígnalo a la categoría "Promociones y Descuentos". Categorías permitidas: ${JSON.stringify(categorias)}`;
+            const payload = { contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64ImageData } }] }], generationConfig: { responseMimeType: "application/json" } };
+            
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`Error en la API de Gemini: ${response.status} ${await response.text()}`);
+            const result = await response.json();
+            
+            if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return JSON.parse(result.candidates[0].content.parts[0].text);
+            } else {
+                throw new Error("La respuesta de la IA no tiene el formato esperado o está vacía.");
+            }
+        }
+
+        // --- LÓGICA DE LA PESTAÑA "MIS GASTOS" ---
+        function populateFilters() {
+            const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a,b) => b-a);
+            const yearSelect = document.getElementById('filter-year');
+            yearSelect.innerHTML = '<option value="all">Todos los Años</option>';
+            years.forEach(year => yearSelect.innerHTML += `<option value="${year}">${year}</option>`);
+
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const monthSelect = document.getElementById('filter-month');
+            monthSelect.innerHTML = '<option value="all">Todos los Meses</option>';
+            months.forEach((month, index) => monthSelect.innerHTML += `<option value="${index}">${month}</option>`);
+
+            yearSelect.addEventListener('change', renderDashboard);
+            monthSelect.addEventListener('change', renderDashboard);
+        }
+
+        function renderDashboard() {
+            const selectedYear = document.getElementById('filter-year').value;
+            const selectedMonth = document.getElementById('filter-month').value;
+            const filteredPurchases = allPurchases.filter(p => {
+                const date = new Date(p.fecha);
+                const yearMatch = selectedYear === 'all' || date.getFullYear() == selectedYear;
+                const monthMatch = selectedMonth === 'all' || date.getMonth() == selectedMonth;
+                return yearMatch && monthMatch;
+            });
+
+            document.getElementById('total-expense').textContent = `${filteredPurchases.reduce((s, p) => s + p.total, 0).toFixed(2).replace('.',',')} €`;
+            document.getElementById('total-purchases').textContent = filteredPurchases.length;
+            renderSupermarketChart(filteredPurchases);
+            renderCategoryChart(filteredPurchases);
+            renderPurchasesHistory(filteredPurchases);
+        }
+
+        function renderSupermarketChart(data) {
+            const ctx = document.getElementById('supermarket-chart').getContext('2d');
+            const spendingBySupermarket = data.reduce((acc, p) => {
+                acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
+                return acc;
+            }, {});
+            if (supermarketChart) supermarketChart.destroy();
+            supermarketChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingBySupermarket), datasets: [{ data: Object.values(spendingBySupermarket), backgroundColor: ['#4f46e5', '#7c3aed', '#db2777', '#f59e0b', '#10b981', '#3b82f6'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+        
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('category-chart').getContext('2d');
+            const spendingByCategory = data.flatMap(p => p.items).reduce((acc, item) => {
+                const itemTotal = (item.cantidad || 1) * (item.precio_unitario || 0);
+                const category = item.categoria_principal || "Otros";
+                acc[category] = (acc[category] || 0) + itemTotal;
+                return acc;
+            }, {});
+            if (categoryChart) categoryChart.destroy();
+            categoryChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingByCategory), datasets: [{ data: Object.values(spendingByCategory), backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#6366f1', '#a855f7', '#d946ef'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+
+        function renderPurchasesHistory(data) {
+            const tbody = document.getElementById('purchases-history');
+            tbody.innerHTML = '';
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No hay compras para los filtros seleccionados.</td></tr>`;
+                return;
+            }
+            data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach(p => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b';
+                row.innerHTML = `
+                    <td class="px-6 py-4">${new Date(p.fecha).toLocaleDateString('es-ES')}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">${p.supermercado}</td>
+                    <td class="px-6 py-4">${p.total.toFixed(2).replace('.',',')} €</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // --- LÓGICA DE LA PESTAÑA "MIS PRODUCTOS" ---
+        function renderProductsTab() {
+            const products = {};
+            allPurchases.forEach(purchase => {
+                purchase.items.forEach(item => {
+                    const productName = item.producto.toLowerCase().trim();
+                    if (!products[productName]) {
+                        products[productName] = { display_name: item.producto, categoria_principal: item.categoria_principal, sub_categoria: item.sub_categoria, count: 0, prices: [] };
+                    }
+                    products[productName].count++;
+                    products[productName].prices.push(item.precio_unitario);
+                });
+            });
+
+            const tableBody = document.getElementById('products-table');
+            tableBody.innerHTML = '';
+            if (Object.keys(products).length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No has comprado ningún producto todavía.</td></tr>`;
+                return;
+            }
+
+            Object.entries(products).forEach(([productName, productData]) => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b';
+                const avgPrice = productData.prices.reduce((a, b) => a + b, 0) / productData.prices.length;
+                const mainCatSelect = document.createElement('select');
+                mainCatSelect.className = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5';
+                Object.keys(categorias).forEach(cat => {
+                    mainCatSelect.innerHTML += `<option value="${cat}" ${cat === productData.categoria_principal ? 'selected' : ''}>${cat}</option>`;
+                });
+                const subCatSelect = document.createElement('select');
+                subCatSelect.className = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5';
+                
+                const updateSubCatOptions = () => {
+                    const selectedMainCat = mainCatSelect.value;
+                    subCatSelect.innerHTML = '';
+                    (categorias[selectedMainCat] || ['Otros']).forEach(subCat => {
+                        subCatSelect.innerHTML += `<option value="${subCat}" ${subCat === productData.sub_categoria && selectedMainCat === productData.categoria_principal ? 'selected' : ''}>${subCat}</option>`;
+                    });
+                };
+                updateSubCatOptions();
+                
+                mainCatSelect.addEventListener('change', updateSubCatOptions);
+                const changeHandler = () => updateProductCategory(productName, mainCatSelect.value, subCatSelect.value);
+                mainCatSelect.addEventListener('change', changeHandler);
+                subCatSelect.addEventListener('change', changeHandler);
+
+                row.innerHTML = `<td class="px-6 py-4 font-medium text-gray-900">${productData.display_name}</td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4 text-center">${productData.count}</td><td class="px-6 py-4">${avgPrice.toFixed(2).replace('.',',')} €</td>`;
+                row.cells[1].appendChild(mainCatSelect);
+                row.cells[2].appendChild(subCatSelect);
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function updateProductCategory(productNameToUpdate, newMainCategory, newSubCategory) {
+            if (!userId) return;
+            processingOverlay.classList.remove('hidden');
+            const productNameLower = productNameToUpdate.toLowerCase().trim();
+            const batch = writeBatch(db);
+            allPurchases.filter(p => p.items.some(item => item.producto.toLowerCase().trim() === productNameLower)).forEach(purchase => {
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/compras`, purchase.id);
+                const newItems = purchase.items.map(item => item.producto.toLowerCase().trim() === productNameLower ? { ...item, categoria_principal: newMainCategory, sub_categoria: newSubCategory } : item);
+                batch.update(docRef, { items: newItems });
+            });
+            try {
+                await batch.commit();
+                showMessage("Actualizado", `La categoría de "${productNameToUpdate}" ha sido actualizada.`);
+            } catch (error) {
+                console.error("Error actualizando categorías:", error);
+                showMessage("Error", "No se pudo actualizar la categoría del producto.");
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+        
+        // --- MODALES ---
+        const modal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmContent = document.getElementById('confirmation-content');
+        const confirmSaveBtn = document.getElementById('confirm-save-btn');
+        const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+
+        function showMessage(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+        function hideMessage() {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        modalCloseBtn.addEventListener('click', hideMessage);
+
+        function displayPurchaseConfirmation(data) {
+            let itemsHtml = '<table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left p-2">Producto</th><th class="text-right p-2">Cant.</th><th class="text-right p-2">Precio</th><th class="text-left p-2">Categoría</th></tr></thead><tbody>';
+            data.items.forEach(item => {
+                itemsHtml += `<tr class="border-b"><td class="p-2">${item.producto}</td><td class="text-right p-2">${item.cantidad}</td><td class="text-right p-2">${(item.precio_unitario || 0).toFixed(2)}€</td><td class="p-2">${item.categoria_principal} / ${item.sub_categoria}</td></tr>`;
+            });
+            itemsHtml += '</tbody></table>';
+
+            confirmContent.innerHTML = `
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div><strong>Supermercado:</strong><br>${data.supermercado}</div>
+                    <div><strong>Fecha:</strong><br>${new Date(data.fecha).toLocaleDateString('es-ES')}</div>
+                    <div><strong>Total:</strong><br><span class="font-bold text-lg">${data.total.toFixed(2)}€</span></div>
+                </div>
+                ${itemsHtml}
+            `;
+            confirmationModal.classList.remove('hidden');
+            setTimeout(() => confirmationModal.classList.remove('opacity-0'), 10);
+        }
+        
+        function hideConfirmationModal() {
+            confirmationModal.classList.add('opacity-0');
+            setTimeout(() => confirmationModal.classList.add('hidden'), 300);
+        }
+
+        confirmCancelBtn.addEventListener('click', hideConfirmationModal);
+        confirmSaveBtn.addEventListener('click', async () => {
+            if (!currentPurchaseData || !userId) return;
+            processingOverlay.classList.remove('hidden');
+            hideConfirmationModal();
+            
+            try {
+                const purchaseToSave = { ...currentPurchaseData };
+                
+                const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
+                await addDoc(purchasesCol, purchaseToSave);
+                
+                showMessage("Éxito", "La compra ha sido guardada correctamente.");
+                // Resetear
+                fileUpload.value = '';
+                imagePreviewContainer.innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>';
+                processBtn.disabled = true;
+                currentPurchaseData = null;
+                fileBase64 = null;
+
+            } catch (error) {
+                console.error("Error guardando la compra:", error);
+                showMessage("Error", "No se pudo guardar la compra.");
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        });
+
+    </script>
+</body>
+</html>
