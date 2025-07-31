@@ -124,11 +124,14 @@
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Categoría Principal</h3>
+                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Supermercado</h3>
                             <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
                         </div>
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Categoría Principal</h3>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 id="category-chart-title" class="text-lg font-semibold">Gasto por Categoría Principal</h3>
+                                <button id="category-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
+                            </div>
                             <div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div>
                         </div>
                     </div>
@@ -409,12 +412,17 @@
         
         let userId = null;
         let allPurchases = [];
+        let currentFilteredPurchases = [];
         let selectedPurchases = new Set();
         let supermarketChart = null;
         let categoryChart = null;
         let currentPurchaseData = null; 
         let currentFile = null;
         let userPlan = 'free';
+        
+        let categoryChartLevel = 1; // 1: Principal, 2: Familia, 3: Subfamilia
+        let selectedPrincipal = null;
+        let selectedFamilia = null;
 
         const categorias = {
             "🛒 ALIMENTOS Y BEBIDAS": {
@@ -781,17 +789,23 @@
             if(!document.getElementById('app-content').classList.contains('hidden')) {
                 const selectedYear = document.getElementById('filter-year').value;
                 const selectedMonth = document.getElementById('filter-month').value;
-                const filteredPurchases = allPurchases.filter(p => {
+                currentFilteredPurchases = allPurchases.filter(p => {
                     const date = new Date(p.fecha);
                     const yearMatch = selectedYear === 'all' || date.getFullYear() == selectedYear;
                     const monthMatch = selectedMonth === 'all' || date.getMonth() == selectedMonth;
                     return yearMatch && monthMatch;
                 });
-                document.getElementById('total-expense').textContent = `${filteredPurchases.reduce((s, p) => s + (p.total || 0), 0).toFixed(2).replace('.',',')} €`;
-                document.getElementById('total-purchases').textContent = filteredPurchases.length;
-                renderSupermarketChart(filteredPurchases);
-                renderCategoryChart(filteredPurchases);
-                renderPurchasesHistory(filteredPurchases);
+                document.getElementById('total-expense').textContent = `${currentFilteredPurchases.reduce((s, p) => s + (p.total || 0), 0).toFixed(2).replace('.',',')} €`;
+                document.getElementById('total-purchases').textContent = currentFilteredPurchases.length;
+                
+                // Reset drill-down chart on filter change
+                categoryChartLevel = 1;
+                selectedPrincipal = null;
+                selectedFamilia = null;
+
+                renderSupermarketChart(currentFilteredPurchases);
+                renderCategoryChart();
+                renderPurchasesHistory(currentFilteredPurchases);
             }
         }
 
@@ -805,17 +819,97 @@
             supermarketChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingBySupermarket), datasets: [{ data: Object.values(spendingBySupermarket), backgroundColor: ['#4f46e5', '#7c3aed', '#db2777', '#f59e0b', '#10b981', '#3b82f6'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
         }
         
-        function renderCategoryChart(data) {
+        const categoryChartTitle = document.getElementById('category-chart-title');
+        const categoryChartBackBtn = document.getElementById('category-chart-back-btn');
+
+        function renderCategoryChart() {
             const ctx = document.getElementById('category-chart').getContext('2d');
-            const spendingByCategory = data.flatMap(p => p.items || []).reduce((acc, item) => {
-                const itemTotal = (item.cantidad || 1) * (item.precio_unitario || 0);
-                const category = item.categoria_principal || "Otros";
-                acc[category] = (acc[category] || 0) + itemTotal;
-                return acc;
-            }, {});
+            let spendingData = {};
+            let chartLabel = '';
+
+            const allItems = currentFilteredPurchases.flatMap(p => p.items || []);
+
+            if (categoryChartLevel === 1) {
+                categoryChartTitle.textContent = 'Gasto por Categoría Principal';
+                categoryChartBackBtn.classList.add('hidden');
+                spendingData = allItems.reduce((acc, item) => {
+                    const itemTotal = (item.cantidad || 1) * (item.precio_unitario || 0);
+                    const category = item.categoria_principal || "Otros";
+                    acc[category] = (acc[category] || 0) + itemTotal;
+                    return acc;
+                }, {});
+                chartLabel = 'Gasto por Categoría Principal';
+            } else if (categoryChartLevel === 2) {
+                categoryChartTitle.textContent = `Desglose de ${selectedPrincipal}`;
+                categoryChartBackBtn.classList.remove('hidden');
+                spendingData = allItems.filter(item => item.categoria_principal === selectedPrincipal).reduce((acc, item) => {
+                    const itemTotal = (item.cantidad || 1) * (item.precio_unitario || 0);
+                    const family = item.familia || "Otros";
+                    acc[family] = (acc[family] || 0) + itemTotal;
+                    return acc;
+                }, {});
+                chartLabel = 'Gasto por Familia';
+            } else if (categoryChartLevel === 3) {
+                categoryChartTitle.textContent = `Desglose de ${selectedFamilia}`;
+                categoryChartBackBtn.classList.remove('hidden');
+                 spendingData = allItems.filter(item => item.familia === selectedFamilia).reduce((acc, item) => {
+                    const itemTotal = (item.cantidad || 1) * (item.precio_unitario || 0);
+                    const subfamily = item.subfamilia || "Otros";
+                    acc[subfamily] = (acc[subfamily] || 0) + itemTotal;
+                    return acc;
+                }, {});
+                chartLabel = 'Gasto por Subfamilia';
+            }
+
             if (categoryChart) categoryChart.destroy();
-            categoryChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingByCategory), datasets: [{ data: Object.values(spendingByCategory), backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#6366f1', '#a855f7', '#d946ef'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            categoryChart = new Chart(ctx, { 
+                type: 'doughnut', 
+                data: { 
+                    labels: Object.keys(spendingData), 
+                    datasets: [{ 
+                        label: chartLabel,
+                        data: Object.values(spendingData), 
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#6366f1', '#a855f7', '#d946ef'], 
+                        hoverOffset: 4 
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const clickedLabel = categoryChart.data.labels[elements[0].index];
+                            handleCategoryChartClick(clickedLabel);
+                        }
+                    }
+                } 
+            });
         }
+
+        function handleCategoryChartClick(label) {
+            if (categoryChartLevel === 1) {
+                categoryChartLevel = 2;
+                selectedPrincipal = label;
+                renderCategoryChart();
+            } else if (categoryChartLevel === 2) {
+                categoryChartLevel = 3;
+                selectedFamilia = label;
+                renderCategoryChart();
+            }
+        }
+
+        categoryChartBackBtn.addEventListener('click', () => {
+            if (categoryChartLevel > 1) {
+                categoryChartLevel--;
+                if (categoryChartLevel === 1) {
+                    selectedPrincipal = null;
+                    selectedFamilia = null;
+                } else if (categoryChartLevel === 2) {
+                    selectedFamilia = null;
+                }
+                renderCategoryChart();
+            }
+        });
 
         function renderPurchasesHistory(data) {
             const tbody = document.getElementById('purchases-history');
