@@ -27,7 +27,8 @@
         .achievement.unlocked { opacity: 1; }
         .achievement.locked { opacity: 0.4; filter: grayscale(100%); }
         .premium-feature { position: relative; border: 2px dashed #d1d5db; padding: 2rem; border-radius: 0.5rem; margin-top: 1rem; }
-        .premium-overlay { position: absolute; inset: 0; background-color: rgba(249, 250, 251, 0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-radius: 0.5rem; }
+        .premium-overlay { position: absolute; inset: 0; background-color: rgba(249, 250, 251, 0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-radius: 0.5rem; cursor: pointer; }
+        #ads-banner.hidden { display: none; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,6 +53,7 @@
             <button id="login-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
                 <i class="fab fa-google mr-2"></i> Iniciar sesión con Google
             </button>
+            <p class="text-xs text-gray-500 mt-4"><i class="fas fa-shield-alt mr-1"></i>Tus datos están protegidos con cifrado a nivel bancario.</p>
         </div>
         
         <!-- Contenido principal de la App (oculto hasta login) -->
@@ -156,6 +158,10 @@
                             </table>
                         </div>
                     </div>
+                    <div id="ads-banner" class="hidden mt-8 p-4 bg-gray-200 rounded-lg text-center text-gray-600">
+                        <p class="text-sm">Espacio para publicidad (Visible solo para usuarios gratuitos)</p>
+                        <!-- Aquí se pegaría el código de Google AdSense -->
+                    </div>
                 </div>
 
                 <!-- Pestaña: Mis Productos -->
@@ -206,8 +212,18 @@
                 <div id="logros" class="tab-content">
                      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                         <h2 class="text-xl font-semibold mb-4">Mis Logros</h2>
-                        <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center">
+                        <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8">
                             <!-- Los logros se generarán aquí -->
+                        </div>
+                        <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2>
+                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i>
+                                <div>
+                                    <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3>
+                                    <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -223,7 +239,7 @@
                             <div class="premium-overlay">
                                 <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
                                 <p class="font-semibold">Función Premium</p>
-                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg">¡Actualiza ahora!</button>
+                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
                             </div>
                         </div>
 
@@ -233,7 +249,7 @@
                              <div class="premium-overlay">
                                 <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
                                 <p class="font-semibold">Función Premium</p>
-                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg">¡Actualiza ahora!</button>
+                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
                             </div>
                         </div>
                      </div>
@@ -285,6 +301,39 @@
             <div class="mt-4 flex justify-end gap-4">
                 <button id="delete-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
                 <button id="delete-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Bienvenida (Onboarding) -->
+    <div id="welcome-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto text-center">
+            <i class="fas fa-rocket fa-3x text-indigo-500 mb-4"></i>
+            <h3 class="text-2xl font-bold">¡Bienvenido a tu Gestor de Gastos!</h3>
+            <p class="mt-4 text-gray-600">Estamos encantados de tenerte aquí. Para empezar, simplemente ve a la pestaña <strong>"Analizar Ticket"</strong>, sube una foto de tu primer recibo, y deja que la magia de la IA haga el resto.</p>
+            <p class="mt-2 text-gray-600">¡Feliz ahorro!</p>
+            <div class="mt-6">
+                <button id="welcome-close-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">¡Entendido!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Actualización a Premium -->
+    <div id="upgrade-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto">
+            <div class="text-center">
+                <i class="fas fa-star fa-3x text-yellow-500 mb-4"></i>
+                <h3 class="text-2xl font-bold">Desbloquea todo el Potencial</h3>
+            </div>
+            <ul class="mt-4 space-y-2 text-gray-600">
+                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Análisis de Precios:</strong> Compara supermercados y sigue la evolución de los precios.</li>
+                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Presupuestos Inteligentes:</strong> Fija límites por categoría y recibe alertas.</li>
+                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Exportación de Datos:</strong> Descarga tus gastos en CSV o PDF.</li>
+                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Sin Anuncios:</strong> Disfruta de una experiencia limpia y sin interrupciones.</li>
+            </ul>
+            <div class="mt-6">
+                <button class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600">Suscribirse a Premium</button>
+                <button id="upgrade-close-btn" class="w-full mt-2 text-sm text-gray-500 hover:underline">Quizás más tarde</button>
             </div>
         </div>
     </div>
@@ -451,21 +500,29 @@
             if (!userId) return;
             const userDocRef = doc(db, `users/${userId}`);
             const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists() && userDoc.data().plan) {
-                userPlan = userDoc.data().plan;
+            if (userDoc.exists()) {
+                userPlan = userDoc.data().plan || 'free';
+                if(!userDoc.data().hasSeenWelcome) {
+                    showWelcomeModal();
+                    await setDoc(userDocRef, { hasSeenWelcome: true }, { merge: true });
+                }
             } else {
-                await setDoc(userDocRef, { plan: 'free', createdAt: new Date() }, { merge: true });
+                await setDoc(userDocRef, { plan: 'free', createdAt: new Date(), hasSeenWelcome: true }, { merge: true });
                 userPlan = 'free';
+                showWelcomeModal();
             }
             updateUIForPlan();
         }
 
         function updateUIForPlan() {
             const premiumOverlays = document.querySelectorAll('.premium-overlay');
+            const adsBanner = document.getElementById('ads-banner');
             if (userPlan === 'premium') {
                 premiumOverlays.forEach(el => el.classList.add('hidden'));
+                adsBanner.classList.add('hidden');
             } else {
                  premiumOverlays.forEach(el => el.classList.remove('hidden'));
+                 adsBanner.classList.remove('hidden');
             }
         }
         
@@ -989,6 +1046,35 @@
 
         deleteConfirmBtn.addEventListener('click', () => onConfirmDelete());
         deleteCancelBtn.addEventListener('click', hideDeleteConfirmModal);
+
+        // --- ONBOARDING Y PREMIUM MODALS ---
+        const welcomeModal = document.getElementById('welcome-modal');
+        const welcomeCloseBtn = document.getElementById('welcome-close-btn');
+        const upgradeModal = document.getElementById('upgrade-modal');
+        const upgradeCloseBtn = document.getElementById('upgrade-close-btn');
+        
+        function showWelcomeModal() {
+            welcomeModal.classList.remove('hidden');
+            setTimeout(() => welcomeModal.classList.remove('opacity-0'), 10);
+        }
+        function hideWelcomeModal() {
+            welcomeModal.classList.add('opacity-0');
+            setTimeout(() => welcomeModal.classList.add('hidden'), 300);
+        }
+        welcomeCloseBtn.addEventListener('click', hideWelcomeModal);
+        
+        function showUpgradeModal() {
+            upgradeModal.classList.remove('hidden');
+            setTimeout(() => upgradeModal.classList.remove('opacity-0'), 10);
+        }
+        function hideUpgradeModal() {
+            upgradeModal.classList.add('opacity-0');
+            setTimeout(() => upgradeModal.classList.add('hidden'), 300);
+        }
+        upgradeCloseBtn.addEventListener('click', hideUpgradeModal);
+        document.querySelectorAll('.upgrade-btn, .premium-overlay').forEach(el => {
+            el.addEventListener('click', showUpgradeModal);
+        });
 
     </script>
 </body>
