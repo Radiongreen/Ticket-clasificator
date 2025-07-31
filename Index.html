@@ -48,6 +48,10 @@
         #app-content.hidden, #login-container.hidden {
             display: none;
         }
+        .table-actions button:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,14 +161,25 @@
                         </div>
                     </div>
                      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-lg font-semibold mb-4">Historial de Compras</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Historial de Compras</h3>
+                            <div class="table-actions">
+                                <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
+                                    <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
+                                </button>
+                            </div>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left text-gray-500">
                                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                     <tr>
+                                        <th scope="col" class="p-4">
+                                            <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                        </th>
                                         <th scope="col" class="px-6 py-3">Fecha</th>
                                         <th scope="col" class="px-6 py-3">Supermercado</th>
                                         <th scope="col" class="px-6 py-3">Total</th>
+                                        <th scope="col" class="px-6 py-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="purchases-history"></tbody>
@@ -245,11 +260,11 @@
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
             authDomain: "tickets-clasificator.firebaseapp.com",
@@ -260,21 +275,22 @@
             measurementId: "G-FW5ER1GV03"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
         
-        // El appId para las rutas de la base de datos se puede tomar del projectId
         const appId = firebaseConfig.projectId;
 
         let userId = null;
         let allPurchases = [];
+        let selectedPurchases = new Set();
         let supermarketChart = null;
         let categoryChart = null;
         let currentPurchaseData = null; 
+        let currentFile = null;
 
         const categorias = {
             "🍎 FRUTAS Y VERDURAS": ["Verduras", "Tubérculos", "Setas y hongos", "Frutas", "Frutos secos", "Legumbres", "Algas", "Germinados, Brotes y Flores"],
@@ -329,11 +345,9 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Usuario ha iniciado sesión
                 userId = user.uid;
                 loginContainer.classList.add('hidden');
                 appContent.classList.remove('hidden');
-
                 authContainer.innerHTML = `
                     <div class="flex items-center gap-4">
                         <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
@@ -344,16 +358,14 @@
                     </div>
                 `;
                 document.getElementById('logout-btn').addEventListener('click', handleSignOut);
-                
                 loadInitialData();
             } else {
-                // Usuario no ha iniciado sesión
                 userId = null;
                 loginContainer.classList.remove('hidden');
                 appContent.classList.add('hidden');
                 authContainer.innerHTML = '';
                 allPurchases = [];
-                renderDashboard(); // Limpiar el dashboard
+                renderDashboard();
             }
         });
 
@@ -362,6 +374,8 @@
             const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
             onSnapshot(purchasesCol, (snapshot) => {
                 allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                selectedPurchases.clear();
+                updateDeleteButtonState();
                 populateFilters();
                 renderDashboard();
                 renderProductsTab();
@@ -393,6 +407,7 @@
         fileUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
+                currentFile = file;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     fileBase64 = event.target.result.split(',')[1];
@@ -409,10 +424,9 @@
                 return;
             }
             processingOverlay.classList.remove('hidden');
-            
             try {
                 const result = await analyzeTicketWithAI(fileBase64);
-                currentPurchaseData = result; // Guardar datos para la confirmación
+                currentPurchaseData = result;
                 displayPurchaseConfirmation(result);
             } catch (error) {
                 console.error("Error procesando el ticket:", error);
@@ -427,11 +441,9 @@
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             const prompt = `Analiza la imagen de este ticket de compra. Extrae la información y devuélvela ESTRICTAMENTE en formato JSON. La estructura debe ser: { "supermercado": "nombre", "fecha": "YYYY-MM-DD", "total": numero, "items": [...] }. Para cada item, extrae: { "producto": "nombre exacto del producto", "producto_generico": "nombre genérico, ej. 'Leche Entera' para 'Leche Entera Hacendado'", "cantidad": numero, "precio_unitario": numero, "categoria_principal": "...", "sub_categoria": "..." }. Usa las siguientes categorías y subcategorías ESTRICTAMENTE. No inventes ni alteres ninguna. Si un producto no encaja, usa "Otros" en ambas. Si hay un descuento o promoción, asígnalo a la categoría "Promociones y Descuentos". Categorías permitidas: ${JSON.stringify(categorias)}`;
             const payload = { contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64ImageData } }] }], generationConfig: { responseMimeType: "application/json" } };
-            
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (!response.ok) throw new Error(`Error en la API de Gemini: ${response.status} ${await response.text()}`);
             const result = await response.json();
-            
             if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
                 return JSON.parse(result.candidates[0].content.parts[0].text);
             } else {
@@ -445,12 +457,10 @@
             const yearSelect = document.getElementById('filter-year');
             yearSelect.innerHTML = '<option value="all">Todos los Años</option>';
             years.forEach(year => yearSelect.innerHTML += `<option value="${year}">${year}</option>`);
-
             const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             const monthSelect = document.getElementById('filter-month');
             monthSelect.innerHTML = '<option value="all">Todos los Meses</option>';
             months.forEach((month, index) => monthSelect.innerHTML += `<option value="${index}">${month}</option>`);
-
             yearSelect.addEventListener('change', renderDashboard);
             monthSelect.addEventListener('change', renderDashboard);
         }
@@ -464,7 +474,6 @@
                 const monthMatch = selectedMonth === 'all' || date.getMonth() == selectedMonth;
                 return yearMatch && monthMatch;
             });
-
             document.getElementById('total-expense').textContent = `${filteredPurchases.reduce((s, p) => s + p.total, 0).toFixed(2).replace('.',',')} €`;
             document.getElementById('total-purchases').textContent = filteredPurchases.length;
             renderSupermarketChart(filteredPurchases);
@@ -498,16 +507,24 @@
             const tbody = document.getElementById('purchases-history');
             tbody.innerHTML = '';
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4">No hay compras para los filtros seleccionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No hay compras para los filtros seleccionados.</td></tr>`;
                 return;
             }
             data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach(p => {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b';
                 row.innerHTML = `
+                    <td class="p-4">
+                        <input type="checkbox" data-id="${p.id}" class="row-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                    </td>
                     <td class="px-6 py-4">${new Date(p.fecha).toLocaleDateString('es-ES')}</td>
                     <td class="px-6 py-4 font-medium text-gray-900">${p.supermercado}</td>
                     <td class="px-6 py-4">${p.total.toFixed(2).replace('.',',')} €</td>
+                    <td class="px-6 py-4 text-center">
+                        <a href="${p.receiptUrl || '#'}" target="_blank" download class="text-indigo-600 hover:text-indigo-900 ${!p.receiptUrl ? 'opacity-50 cursor-not-allowed' : ''}" title="Descargar Ticket">
+                           <i class="fas fa-download"></i>
+                        </a>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
@@ -526,14 +543,12 @@
                     products[productName].prices.push(item.precio_unitario);
                 });
             });
-
             const tableBody = document.getElementById('products-table');
             tableBody.innerHTML = '';
             if (Object.keys(products).length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No has comprado ningún producto todavía.</td></tr>`;
                 return;
             }
-
             Object.entries(products).forEach(([productName, productData]) => {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b';
@@ -545,7 +560,6 @@
                 });
                 const subCatSelect = document.createElement('select');
                 subCatSelect.className = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5';
-                
                 const updateSubCatOptions = () => {
                     const selectedMainCat = mainCatSelect.value;
                     subCatSelect.innerHTML = '';
@@ -554,12 +568,10 @@
                     });
                 };
                 updateSubCatOptions();
-                
                 mainCatSelect.addEventListener('change', updateSubCatOptions);
                 const changeHandler = () => updateProductCategory(productName, mainCatSelect.value, subCatSelect.value);
                 mainCatSelect.addEventListener('change', changeHandler);
                 subCatSelect.addEventListener('change', changeHandler);
-
                 row.innerHTML = `<td class="px-6 py-4 font-medium text-gray-900">${productData.display_name}</td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4 text-center">${productData.count}</td><td class="px-6 py-4">${avgPrice.toFixed(2).replace('.',',')} €</td>`;
                 row.cells[1].appendChild(mainCatSelect);
                 row.cells[2].appendChild(subCatSelect);
@@ -616,7 +628,6 @@
                 itemsHtml += `<tr class="border-b"><td class="p-2">${item.producto}</td><td class="text-right p-2">${item.cantidad}</td><td class="text-right p-2">${(item.precio_unitario || 0).toFixed(2)}€</td><td class="p-2">${item.categoria_principal} / ${item.sub_categoria}</td></tr>`;
             });
             itemsHtml += '</tbody></table>';
-
             confirmContent.innerHTML = `
                 <div class="grid grid-cols-3 gap-4 mb-4">
                     <div><strong>Supermercado:</strong><br>${data.supermercado}</div>
@@ -636,28 +647,108 @@
 
         confirmCancelBtn.addEventListener('click', hideConfirmationModal);
         confirmSaveBtn.addEventListener('click', async () => {
-            if (!currentPurchaseData || !userId) return;
+            if (!currentPurchaseData || !userId || !currentFile) return;
             processingOverlay.classList.remove('hidden');
             hideConfirmationModal();
-            
             try {
-                const purchaseToSave = { ...currentPurchaseData };
-                
-                const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
-                await addDoc(purchasesCol, purchaseToSave);
-                
-                showMessage("Éxito", "La compra ha sido guardada correctamente.");
-                // Resetear
-                fileUpload.value = '';
-                imagePreviewContainer.innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>';
-                processBtn.disabled = true;
-                currentPurchaseData = null;
-                fileBase64 = null;
-
+                const storageRef = ref(storage, `users/${userId}/receipts/${Date.now()}-${currentFile.name}`);
+                const reader = new FileReader();
+                reader.readAsDataURL(currentFile);
+                reader.onload = async (event) => {
+                    const dataUrl = event.target.result;
+                    await uploadString(storageRef, dataUrl, 'data_url');
+                    const downloadURL = await getDownloadURL(storageRef);
+                    const purchaseToSave = { ...currentPurchaseData, receiptUrl: downloadURL };
+                    const purchasesCol = collection(db, `artifacts/${appId}/users/${userId}/compras`);
+                    await addDoc(purchasesCol, purchaseToSave);
+                    showMessage("Éxito", "La compra ha sido guardada correctamente.");
+                    fileUpload.value = '';
+                    imagePreviewContainer.innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>';
+                    processBtn.disabled = true;
+                    currentPurchaseData = null;
+                    fileBase64 = null;
+                    currentFile = null;
+                };
             } catch (error) {
                 console.error("Error guardando la compra:", error);
                 showMessage("Error", "No se pudo guardar la compra.");
             } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        });
+        
+        // --- LÓGICA DE ELIMINACIÓN ---
+        const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+
+        function updateDeleteButtonState() {
+            deleteSelectedBtn.disabled = selectedPurchases.size === 0;
+        }
+
+        document.getElementById('purchases-history').addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-checkbox')) {
+                const id = e.target.dataset.id;
+                if (e.target.checked) {
+                    selectedPurchases.add(id);
+                } else {
+                    selectedPurchases.delete(id);
+                }
+                updateDeleteButtonState();
+            }
+        });
+
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+                const id = checkbox.dataset.id;
+                if (e.target.checked) {
+                    selectedPurchases.add(id);
+                } else {
+                    selectedPurchases.delete(id);
+                }
+            });
+            updateDeleteButtonState();
+        });
+
+        deleteSelectedBtn.addEventListener('click', async () => {
+            if (selectedPurchases.size === 0) return;
+            // Usar un confirm simple por ahora, un modal personalizado sería mejor
+            const confirmed = confirm(`¿Estás seguro de que quieres eliminar ${selectedPurchases.size} ticket(s)? Esta acción no se puede deshacer.`);
+            if (!confirmed) return;
+
+            processingOverlay.classList.remove('hidden');
+            const batch = writeBatch(db);
+            const deletePromises = [];
+
+            for (const id of selectedPurchases) {
+                const purchaseDoc = allPurchases.find(p => p.id === id);
+                // Eliminar de Firestore
+                const docRef = doc(db, `artifacts/${appId}/users/${userId}/compras`, id);
+                batch.delete(docRef);
+
+                // Eliminar de Storage si existe el ticket
+                if (purchaseDoc && purchaseDoc.receiptUrl) {
+                    try {
+                        const storageRef = ref(storage, purchaseDoc.receiptUrl);
+                        deletePromises.push(deleteObject(storageRef));
+                    } catch (error) {
+                        console.error("Error al crear referencia para borrar de Storage:", error);
+                    }
+                }
+            }
+
+            try {
+                await batch.commit();
+                await Promise.all(deletePromises);
+                showMessage("Éxito", `${selectedPurchases.size} ticket(s) han sido eliminados.`);
+            } catch (error) {
+                console.error("Error eliminando tickets:", error);
+                showMessage("Error", "No se pudieron eliminar los tickets.");
+            } finally {
+                selectedPurchases.clear();
+                selectAllCheckbox.checked = false;
+                updateDeleteButtonState();
                 processingOverlay.classList.add('hidden');
             }
         });
