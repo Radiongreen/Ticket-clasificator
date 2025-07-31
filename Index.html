@@ -65,6 +65,7 @@
                     <button class="tab-button" data-tab="mis-gastos"><i class="fas fa-chart-pie mr-2"></i> Mis Gastos</button>
                     <button class="tab-button" data-tab="mis-productos"><i class="fas fa-tag mr-2"></i> Mis Productos</button>
                     <button class="tab-button" data-tab="lista-compra"><i class="fas fa-list-check mr-2"></i> Lista de Compra</button>
+                    <button class="tab-button" data-tab="chef-inteligente"><i class="fas fa-utensils mr-2"></i> Chef Inteligente</button>
                     <button class="tab-button" data-tab="logros"><i class="fas fa-trophy mr-2"></i> Mis Logros</button>
                     <button class="tab-button" data-tab="premium"><i class="fas fa-star mr-2"></i> Premium</button>
                 </nav>
@@ -207,6 +208,23 @@
                                 <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias
                              </button>
                              <div id="suggestions-container" class="mt-4 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña: Chef Inteligente -->
+                <div id="chef-inteligente" class="tab-content">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2>
+                        <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que probablemente tienes en tu despensa.</p>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                            <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                Preguntar
+                             </button>
+                        </div>
+                        <div id="chef-suggestions-container" class="mt-6">
+                            <!-- Las sugerencias de recetas aparecerán aquí -->
                         </div>
                     </div>
                 </div>
@@ -834,6 +852,109 @@
                 }
             });
         }
+        
+        // --- LÓGICA DEL CHEF INTELIGENTE ---
+        const chefQueryInput = document.getElementById('chef-query-input');
+        const chefAskBtn = document.getElementById('chef-ask-btn');
+        const chefSuggestionsContainer = document.getElementById('chef-suggestions-container');
+
+        const shelfLifeEstimates = {
+            '🥬 Verduras': 7, '🍎 Frutas Frescas': 7, '🐔 Aves': 4, '🐄 Ternera': 4, '🐖 Cerdo': 4, '🐑 Cordero': 4,
+            '🐠 Pescado Fresco': 3, '🦞 Marisco Fresco': 2, '🥛 Leche': 7, '🍮 Yogures y Postres Lácteos': 14, '🧀 Quesos': 21, '🥚 Huevos': 28,
+            '🥖 Pan': 5, '🍩 Bollería': 5, '🍰 Pasteles': 4
+        };
+
+        function inferPantryInventory() {
+            const pantry = {};
+            const today = new Date();
+
+            allPurchases.forEach(purchase => {
+                (purchase.items || []).forEach(item => {
+                    const productName = (item.producto || '').toLowerCase().trim();
+                    const subfamilia = item.subfamilia;
+                    const lastPurchaseDate = new Date(purchase.fecha);
+                    
+                    const shelfLife = shelfLifeEstimates[cleanLabel(subfamilia)] || 365; // Default to 1 year for non-perishables
+                    
+                    const daysSincePurchase = (today - lastPurchaseDate) / (1000 * 60 * 60 * 24);
+
+                    // Decay factor: probability decreases linearly over the shelf life
+                    let probability = Math.max(0, 1 - (daysSincePurchase / shelfLife));
+
+                    if (pantry[productName]) {
+                        // If we already have this product, update if this purchase is more recent
+                        if (lastPurchaseDate > pantry[productName].lastPurchaseDate) {
+                            pantry[productName] = { ...item, lastPurchaseDate, probability };
+                        }
+                    } else {
+                        pantry[productName] = { ...item, lastPurchaseDate, probability };
+                    }
+                });
+            });
+            // Return top ingredients sorted by probability
+            return Object.values(pantry).filter(p => p.probability > 0.1).sort((a, b) => b.probability - a.probability);
+        }
+
+        if(chefAskBtn) {
+            chefAskBtn.addEventListener('click', async () => {
+                const userQuery = chefQueryInput.value.trim();
+                if (!userQuery) {
+                    showMessage("Chef Inteligente", "Por favor, dime qué tipo de comida te apetece.");
+                    return;
+                }
+
+                processingOverlay.querySelector('p').textContent = "Consultando a nuestro chef...";
+                processingOverlay.classList.remove('hidden');
+                chefSuggestionsContainer.innerHTML = '';
+
+                try {
+                    const pantry = inferPantryInventory();
+                    if (pantry.length < 3) {
+                         showMessage("Chef Inteligente", "No tengo suficiente información sobre tu despensa. ¡Sigue escaneando tickets!");
+                         return;
+                    }
+
+                    const availableIngredients = pantry.slice(0, 15).map(p => p.producto).join(', ');
+
+                    const prompt = `Actúa como un chef creativo. Un usuario tiene los siguientes ingredientes en su despensa, ordenados por probabilidad de disponibilidad: ${availableIngredients}. La petición del usuario es: "${userQuery}". Basándote en los ingredientes más probables, genera una lista de 10 sugerencias de platos. La primera opción debe ser la más factible. Las últimas pueden requerir 1-2 ingredientes adicionales. Devuelve la respuesta en formato JSON, como un array de objetos, donde cada objeto tiene "nombre", "descripcion" y "ingredientes_faltantes" (un array de strings, puede estar vacío).`;
+                    
+                    const apiKey = "AIzaSyCBek1Vt1x3h-fqPr1Vx2OWk_a1kICpi0c";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }};
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error('Error en la API de Gemini');
+                    
+                    const result = await response.json();
+                    const recipes = JSON.parse(result.candidates[0].content.parts[0].text);
+
+                    recipes.forEach(recipe => {
+                        const recipeEl = document.createElement('div');
+                        recipeEl.className = 'bg-gray-50 border border-gray-200 p-4 rounded-lg mb-3';
+                        let missingHtml = '';
+                        if (recipe.ingredientes_faltantes && recipe.ingredientes_faltantes.length > 0) {
+                            missingHtml = `<p class="text-xs text-red-500 mt-2"><strong>Necesitarás:</strong> ${recipe.ingredientes_faltantes.join(', ')}</p>`;
+                        } else {
+                            missingHtml = `<p class="text-xs text-green-600 mt-2"><strong>¡Tienes todo lo necesario!</strong></p>`;
+                        }
+
+                        recipeEl.innerHTML = `
+                            <h4 class="font-bold text-indigo-700">${recipe.nombre}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${recipe.descripcion}</p>
+                            ${missingHtml}
+                        `;
+                        chefSuggestionsContainer.appendChild(recipeEl);
+                    });
+
+                } catch (error) {
+                    console.error("Error generando recetas:", error);
+                    showMessage("Error", "No se pudieron generar las recetas. Inténtalo de nuevo.");
+                } finally {
+                    processingOverlay.classList.add('hidden');
+                }
+            });
+        }
+        
+        // --- OTRAS FUNCIONES ---
         
         function populateFilters() {
             const yearSelect = document.getElementById('filter-year');
