@@ -447,7 +447,7 @@
             "🧴 HIGIENE Y CUIDADO PERSONAL": {
                 "🚿🧼 Higiene Diaria": ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"],
                 "💆‍♀️💅 Cuidado Facial y Corporal": ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"],
-                "⚕️💊 Farmacia/Parafarmacia": ["OTC Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
+                "⚕️💊 Farmacia/Parafarmacia": ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
             },
             "🐾 MASCOTAS": {
                 "🦴🍖 Alimento para Mascotas": ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"],
@@ -461,10 +461,17 @@
                 "💻📱 Tecnología": ["🖥️ Dispositivos Electrónicos", "💾 Software y Aplicaciones"],
                 "💳💰 Finanzas": ["🏦 Comisiones Bancarias", "📄 Seguros", "📉 Intereses de Deuda"],
                 "🎓📚 Educación y Formación": ["🧑‍🏫 Cursos y Talleres", "📖 Libros y Material Didáctico"],
-                "👕👗 Vestimenta y Accesorios": [],
+                "👕👗 Vestimenta y Accesorios": ["👕 Ropa", "👟 Calzado", "👜 Accesorios"],
                 "❤️‍🩹🩺 Salud": ["🧑‍⚕️ Consultas Médicas", "℞ Medicamentos con Receta"]
             }
         };
+
+        const chartColors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+            '#F06292', '#4FC3F7', '#FFEE58', '#80CBC4', '#B39DDB', '#FFB74D',
+            '#E57373', '#64B5F6', '#FFF176', '#4DB6AC', '#CE93D8', '#FFD54F',
+            '#D32F2F', '#1976D2', '#FBC02D', '#00796B', '#7B1FA2', '#F57C00'
+        ];
 
         const cleanLabel = (label) => label.replace(/^\d+(\.\d+)*\.\s*/, '');
 
@@ -817,7 +824,7 @@
                 return acc;
             }, {});
             if (supermarketChart) supermarketChart.destroy();
-            supermarketChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingBySupermarket), datasets: [{ data: Object.values(spendingBySupermarket), backgroundColor: ['#4f46e5', '#7c3aed', '#db2777', '#f59e0b', '#10b981', '#3b82f6'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            supermarketChart = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(spendingBySupermarket), datasets: [{ data: Object.values(spendingBySupermarket), backgroundColor: chartColors, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false } });
         }
         
         const categoryChartTitle = document.getElementById('category-chart-title');
@@ -870,7 +877,7 @@
                     datasets: [{ 
                         label: chartLabel,
                         data: Object.values(spendingData), 
-                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#6366f1', '#a855f7', '#d946ef'], 
+                        backgroundColor: chartColors, 
                         hoverOffset: 4 
                     }] 
                 }, 
