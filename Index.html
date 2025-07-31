@@ -201,10 +201,10 @@
                             <!-- Los productos de la lista se añadirán aquí -->
                         </div>
                         <div class="border-t pt-4">
-                             <h3 class="font-semibold mb-2">Sugerencias de la IA</h3>
-                             <p class="text-sm text-gray-600 mb-4">Basado en tu historial, puede que necesites comprar esto:</p>
+                             <h3 class="font-semibold mb-2">Sugerencias Predictivas</h3>
+                             <p class="text-sm text-gray-600 mb-4">Basado en tus hábitos de consumo, puede que necesites reponer esto:</p>
                              <button id="suggest-items-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                <i class="fas fa-wand-magic-sparkles mr-2"></i>Sugerir Productos
+                                <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias
                              </button>
                              <div id="suggestions-container" class="mt-4 space-y-2"></div>
                         </div>
@@ -705,7 +705,7 @@
             });
         }
         
-        // --- LÓGICA DE LISTA DE COMPRA ---
+        // --- LÓGICA DE LISTA DE COMPRA INTELIGENTE ---
         const addItemInput = document.getElementById('add-item-input');
         const addItemBtn = document.getElementById('add-item-btn');
         const shoppingListContainer = document.getElementById('shopping-list');
@@ -733,46 +733,102 @@
             shoppingListContainer.appendChild(itemEl);
         }
 
+        function analyzePurchasePatterns() {
+            const productData = {};
+            allPurchases.forEach(purchase => {
+                (purchase.items || []).forEach(item => {
+                    const productName = (item.producto || '').toLowerCase().trim();
+                    if (!productData[productName]) {
+                        productData[productName] = { purchaseDates: [], quantities: [] };
+                    }
+                    productData[productName].purchaseDates.push(new Date(purchase.fecha));
+                    productData[productName].quantities.push(item.cantidad || 1);
+                });
+            });
+
+            const consumptionProfile = {};
+            for (const productName in productData) {
+                const data = productData[productName];
+                if (data.purchaseDates.length < 2) continue;
+
+                data.purchaseDates.sort((a, b) => a - b);
+                const intervals = [];
+                for (let i = 1; i < data.purchaseDates.length; i++) {
+                    const diffTime = Math.abs(data.purchaseDates[i] - data.purchaseDates[i - 1]);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    intervals.push(diffDays);
+                }
+
+                if (intervals.length > 0) {
+                    const averageFrequency = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                    consumptionProfile[productName] = {
+                        averageFrequency,
+                        lastPurchaseDate: data.purchaseDates[data.purchaseDates.length - 1]
+                    };
+                }
+            }
+            return consumptionProfile;
+        }
+
+        function generateShoppingSuggestions(consumptionProfile) {
+            const suggestions = [];
+            const today = new Date();
+            const suggestionWindowDays = 4; 
+
+            for (const productName in consumptionProfile) {
+                const profile = consumptionProfile[productName];
+                const nextPredictedPurchase = new Date(profile.lastPurchaseDate);
+                nextPredictedPurchase.setDate(nextPredictedPurchase.getDate() + profile.averageFrequency);
+
+                const daysUntilNextPurchase = (nextPredictedPurchase - today) / (1000 * 60 * 60 * 24);
+
+                if (daysUntilNextPurchase <= suggestionWindowDays) {
+                    suggestions.push({
+                        productName: productName,
+                        daysOverdue: -daysUntilNextPurchase 
+                    });
+                }
+            }
+            return suggestions.sort((a, b) => b.daysOverdue - a.daysOverdue);
+        }
+
         if(suggestItemsBtn) {
-            suggestItemsBtn.addEventListener('click', async () => {
-                processingOverlay.querySelector('p').textContent = "Generando sugerencias...";
+            suggestItemsBtn.addEventListener('click', () => {
+                processingOverlay.querySelector('p').textContent = "Analizando tus hábitos...";
                 processingOverlay.classList.remove('hidden');
+                
                 try {
-                    const purchaseHistory = allPurchases.flatMap(p => p.items.map(item => item.producto)).join(', ');
-                    if (!purchaseHistory) {
-                        showMessage("Información", "No hay suficiente historial para generar sugerencias.");
-                        processingOverlay.classList.add('hidden');
+                    if(allPurchases.length === 0) {
+                        showMessage("Información", "No hay historial de compras para generar sugerencias.");
                         return;
                     }
-                    const prompt = `Basado en esta lista de productos comprados anteriormente, sugiere 5 productos que el usuario podría necesitar comprar. Devuelve solo una lista de nombres de productos en formato JSON array, por ejemplo: ["Leche", "Pan de molde"]. Historial: ${purchaseHistory}`;
-                    
-                    const apiKey = "AIzaSyCBek1Vt1x3h-fqPr1Vx2OWk_a1kICpi0c";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                    const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" }};
-                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) throw new Error('Error en la API de Gemini');
-                    
-                    const result = await response.json();
-                    const suggestions = JSON.parse(result.candidates[0].content.parts[0].text);
-                    
+                    const consumptionProfile = analyzePurchasePatterns();
+                    const suggestions = generateShoppingSuggestions(consumptionProfile);
+
                     suggestionsContainer.innerHTML = '';
-                    suggestions.forEach(item => {
+                    if (suggestions.length === 0) {
+                        suggestionsContainer.innerHTML = '<p class="text-sm text-gray-500">¡Todo en orden! Parece que no necesitas nada con urgencia.</p>';
+                        return;
+                    }
+
+                    suggestions.forEach(suggestion => {
                         const suggestionEl = document.createElement('div');
                         suggestionEl.className = 'flex items-center justify-between bg-green-100 p-2 rounded';
+                        const productNameCapitalized = suggestion.productName.charAt(0).toUpperCase() + suggestion.productName.slice(1);
                         suggestionEl.innerHTML = `
-                            <span>${item}</span>
+                            <span>${productNameCapitalized}</span>
                             <button class="text-green-700 add-suggestion-btn"><i class="fas fa-plus"></i> Añadir</button>
                         `;
                         suggestionEl.querySelector('.add-suggestion-btn').addEventListener('click', () => {
-                            addShoppingListItem(item);
+                            addShoppingListItem(productNameCapitalized);
                             suggestionEl.remove();
                         });
                         suggestionsContainer.appendChild(suggestionEl);
                     });
 
                 } catch (error) {
-                    console.error("Error al obtener sugerencias:", error);
-                    showMessage("Error", "No se pudieron generar las sugerencias.");
+                    console.error("Error al generar sugerencias:", error);
+                    showMessage("Error", "No se pudieron generar las sugerencias predictivas.");
                 } finally {
                     processingOverlay.classList.add('hidden');
                 }
