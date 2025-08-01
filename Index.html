@@ -424,16 +424,18 @@
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
+        // ¡CONFIGURACIÓN CORREGIDA!
         const firebaseConfig = {
-          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ", // Clave de API de Google Cloud para Gemini
+          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
           authDomain: "tickets-clasificator.firebaseapp.com",
           projectId: "tickets-clasificator",
-          storageBucket: "tickets-clasificator.appspot.com", // Corregido para que coincida con la configuración estándar
+          storageBucket: "tickets-clasificator.firebasestorage.app",
           messagingSenderId: "929759305226",
-          appId: "1:929759305226:web:792b430618ae4a419a09f3"
+          appId: "1:929759305226:web:792b430618ae4a419a09f3",
+          measurementId: "G-FW5ER1GV03"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -541,7 +543,7 @@
             // Usamos onSnapshot para escuchar cambios en tiempo real
             unsubscribePurchases = onSnapshot(query(collection(db, "tickets"), where("userId", "in", getAuthorizedIds())), (snapshot) => {
                 allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                loadAllProducts();
+                // loadAllProducts(); // Esta función aún no está implementada
                 populateFilters();
                 renderDashboard();
             });
@@ -634,7 +636,13 @@
                 document.getElementById('user-menu').classList.toggle('hidden');
             });
             document.getElementById('copy-user-id').addEventListener('click', () => {
-                navigator.clipboard.writeText(user.uid).then(() => showMessage("Copiado", "Tu ID de usuario ha sido copiado."));
+                const textArea = document.createElement("textarea");
+                textArea.value = user.uid;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showMessage("Copiado", "Tu ID de usuario ha sido copiado.");
             });
         }
         
@@ -687,12 +695,16 @@
 
             if (householdDoc.exists()) {
                 const membersData = householdDoc.data().members; // { uid: { displayName, photoURL }, ... }
-                membersList.innerHTML = Object.values(membersData).map(member => `
-                    <li class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg">
-                        <img src="${member.photoURL}" alt="${member.displayName}" class="w-8 h-8 rounded-full">
-                        <span class="font-medium">${member.displayName}</span>
-                    </li>
-                `).join('');
+                if (membersData && Object.keys(membersData).length > 0) {
+                    membersList.innerHTML = Object.values(membersData).map(member => `
+                        <li class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg">
+                            <img src="${member.photoURL}" alt="${member.displayName}" class="w-8 h-8 rounded-full">
+                            <span class="font-medium">${member.displayName}</span>
+                        </li>
+                    `).join('');
+                } else {
+                     membersList.innerHTML = '<li class="text-gray-500">No hay miembros en este hogar.</li>';
+                }
             } else {
                 membersList.innerHTML = '<li class="text-red-500">Error: No se encontró el hogar.</li>';
             }
@@ -797,7 +809,7 @@
 
                 // Quitar al usuario del mapa de miembros del hogar
                 batch.update(householdRef, {
-                    [`members.${currentUser.uid}`]: deleteField() // Firestore V9 syntax
+                    [`members.${currentUser.uid}`]: deleteField()
                 });
 
                 // Quitar el householdId del perfil de usuario
@@ -1032,9 +1044,6 @@
             renderProductsTable();
         }
         
-        // ... (Implementaciones de renderSummaryCards, renderSupermarketChart, renderCategoryChart, renderPurchasesHistory, renderProductsTable, etc.)
-        // ... (Implementaciones de populateFilters, updateContextFilter, etc.)
-
         // --- HELPERS Y UTILIDADES ---
         
         function buildAIPrompt() {
@@ -1106,12 +1115,9 @@
         }
 
         // --- INICIALIZACIÓN DE LA APP ---
-        document.addEventListener('DOMContentLoaded', setupEventListeners);
-        
-        // Resto de funciones de renderizado y auxiliares...
-        // (Estas funciones se han omitido aquí por brevedad, pero están en el código completo)
-        // Por ejemplo: renderSummaryCards, renderSupermarketChart, renderCategoryChart, etc.
-        // La lógica completa está implementada para que funcione.
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+        });
         
         function showMessage(title, message) {
             document.getElementById('modal-title').textContent = title;
@@ -1155,10 +1161,6 @@
             document.getElementById('process-ticket-btn').disabled = true;
         }
 
-        // ... Aquí irían el resto de las funciones de renderizado del dashboard ...
-        // Por simplicidad en este bloque, se asume que están implementadas.
-        // El código completo las incluiría para que la app sea funcional.
-        // Por ejemplo:
         function populateFilters() {
             const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a, b) => b - a);
             const yearSelect = document.getElementById('filter-year');
@@ -1213,8 +1215,6 @@
         }
         
         function renderProductsTable() {
-            // Esta función necesitaría agregar los productos de las compras filtradas
-            // y mostrarlos en la tabla 'products-table'.
             const table = document.getElementById('products-table');
             table.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Función en desarrollo.</td></tr>';
         }
