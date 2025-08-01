@@ -439,7 +439,208 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        // El resto del código JS completo va aquí
+        
+        // --- PWA: Service Worker y Manifest ---
+        const manifest = {
+            "name": "Gestor de Gastos IA",
+            "short_name": "Gastos IA",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4f46e5",
+            "description": "Tu asistente de ahorro inteligente.",
+            "icons": [{
+                "src": "https://placehold.co/192x192/4f46e5/ffffff?text=GASTO",
+                "sizes": "192x192",
+                "type": "image/png"
+            }, {
+                "src": "https://placehold.co/512x512/4f46e5/ffffff?text=GASTO-IA",
+                "sizes": "512x512",
+                "type": "image/png"
+            }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
+        document.querySelector('link[rel="apple-touch-icon"]').setAttribute('href', "https://placehold.co/192x192/4f46e5/ffffff?text=GASTO");
+
+        const swContent = `
+            self.addEventListener('install', (e) => {
+                console.log('Service Worker: Installed');
+            });
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(
+                    fetch(e.request).catch(() => caches.match(e.request))
+                );
+            });
+        `;
+        const swBlob = new Blob([swContent], { type: 'application/javascript' });
+        const swURL = URL.createObjectURL(swBlob);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swURL)
+                    .then(registration => console.log('ServiceWorker registration successful'))
+                    .catch(err => console.log('ServiceWorker registration failed: ', err));
+            });
+        }
+        
+        // --- CONFIGURACIÓN E INICIALIZACIÓN ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
+          authDomain: "tickets-clasificator.firebaseapp.com",
+          projectId: "tickets-clasificator",
+          storageBucket: "tickets-clasificator.firebasestorage.app",
+          messagingSenderId: "929759305226",
+          appId: "1:929759305226:web:792b430618ae4a419a09f3",
+          measurementId: "G-FW5ER1GV03"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        let userId = null;
+        let allPurchases = [];
+        let currentFilteredPurchases = [];
+        let selectedPurchases = new Set();
+        let supermarketChart = null;
+        let categoryChart = null;
+        let currentPurchaseData = null; 
+        let currentFile = null;
+        let userPlan = 'free';
+        
+        let categoryChartLevel = 1; // 1: Principal, 2: Familia, 3: Subfamilia
+        let selectedPrincipal = null;
+        let selectedFamilia = null;
+
+        const categorias = {
+            "🛒 ALIMENTOS Y BEBIDAS": {
+                "🍓🥦 Frutas y Verduras": ["🥬 Verduras", "🥔 Tubérculos", "🍄 Setas y Hongos", "🍎 Frutas Frescas", "🍇 Frutas Deshidratadas"],
+                "🥩🍗 Carnes y Aves": ["🐔 Aves", "🐄 Ternera", "🐖 Cerdo", "🐑 Cordero", "🌭 Embutidos"],
+                "🐟🦐 Pescados y Mariscos": ["🐠 Pescado Fresco", "🦞 Marisco Fresco", "🧊 Pescado Congelado", "🥫 Conservas de Pescado"],
+                "🥛🥚 Lácteos y Huevos": ["🥛 Leche", "🍮 Yogures y Postres Lácteos", "🧀 Quesos", "🥚 Huevos"],
+                "🍞🥐 Panadería y Pastelería": ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"],
+                "🌾🫘 Cereales y Legumbres": ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"],
+                "🍾🍶 Aceites, Vinagres y Salsas": ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"],
+                "🥫🥡 Conservas y Platos Preparados": ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"],
+                "🧊 Congelados": ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"],
+                "🥤 Bebidas": ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"],
+                "🥨🍬 Snacks y Dulces": ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"],
+                "❤️‍🩹 Dietéticos y Especiales": ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
+            },
+            "🏠 HOGAR Y LIMPIEZA": {
+                "🧼🧽 Productos de Limpieza": ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"],
+                "🍴🍽️ Menaje y Utensilios": ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"],
+                "🏡 Cuidado del Hogar": ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
+            },
+            "🧴 HIGIENE Y CUIDADO PERSONAL": {
+                "🚿🧼 Higiene Diaria": ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"],
+                "💆‍♀️💅 Cuidado Facial y Corporal": ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"],
+                "⚕️💊 Farmacia/Parafarmacia": ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
+            },
+            "🐾 MASCOTAS": {
+                "🦴🍖 Alimento para Mascotas": ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"],
+                "🧸 Accesorios para Mascotas": ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
+            },
+            "💸 OTROS GASTOS": {
+                "🚗🚌 Transporte": ["⛽ Combustible", "🚇 Transporte Público", "🔧 Mantenimiento del Vehículo"],
+                "🧾 Facturas y Servicios": ["💡 Electricidad", "💧 Agua", "🔥 Gas", "💻 Internet y Telefonía", "📺 Suscripciones"],
+                "🎉🎭 Ocio y Entretenimiento": ["🍽️ Restaurantes y Bares", "🎬 Cine, Teatro y Conciertos", "⚽ Deportes y Actividades", "✈️ Viajes"],
+                "🏡 Vivienda": ["🔑 Alquiler/Hipoteca", "🛠️ Mantenimiento y Reparaciones", "💰 Impuestos y Seguros de Hogar"],
+                "💻📱 Tecnología": ["🖥️ Dispositivos Electrónicos", "💾 Software y Aplicaciones"],
+                "💳💰 Finanzas": ["🏦 Comisiones Bancarias", "📄 Seguros", "📉 Intereses de Deuda"],
+                "🎓📚 Educación y Formación": ["🧑‍🏫 Cursos y Talleres", "📖 Libros y Material Didáctico"],
+                "👕👗 Vestimenta y Accesorios": ["👕 Ropa", "👟 Calzado", "👜 Accesorios"],
+                "❤️‍🩹🩺 Salud": ["🧑‍⚕️ Consultas Médicas", "℞ Medicamentos con Receta"]
+            }
+        };
+
+        const chartColors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+            '#F06292', '#4FC3F7', '#FFEE58', '#80CBC4', '#B39DDB', '#FFB74D',
+            '#E57373', '#64B5F6', '#FFF176', '#4DB6AC', '#CE93D8', '#FFD54F',
+            '#D32F2F', '#1976D2', '#FBC02D', '#00796B', '#7B1FA2', '#F57C00'
+        ];
+
+        const cleanLabel = (label) => label.replace(/^\d+(\.\d+)*\.\s*/, '');
+
+        // --- MANEJO DE AUTENTICACIÓN Y VISIBILIDAD DE PÁGINA ---
+        const landingPage = document.getElementById('landing-page');
+        const appContainer = document.getElementById('app-container');
+        const landingLoginBtn = document.getElementById('landing-login-btn');
+        const landingRegisterBtn = document.getElementById('landing-register-btn');
+        const finalCtaBtn = document.getElementById('final-cta-btn');
+        const authContainer = document.getElementById('auth-container');
+
+        const handleLogin = () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    if (error.code === 'auth/unauthorized-domain') {
+                        showMessage(
+                            "Error de Configuración de Firebase", 
+                            "El dominio actual no está autorizado. Para solucionarlo, ve a tu proyecto de Firebase -> Authentication -> Sign-in method -> Google y añade el dominio desde el que ejecutas la app a la lista de 'Dominios autorizados'."
+                        );
+                    } else {
+                        console.error("Error al iniciar sesión con Google:", error);
+                        showMessage("Error de Autenticación", `No se pudo iniciar sesión con Google. Error: ${error.message}`);
+                    }
+                });
+        };
+
+        landingLoginBtn.addEventListener('click', handleLogin);
+        landingRegisterBtn.addEventListener('click', handleLogin);
+        finalCtaBtn.addEventListener('click', handleLogin);
+
+        const handleSignOut = () => {
+            signOut(auth).catch((error) => {
+                console.error("Error al cerrar sesión:", error);
+                showMessage("Error", "No se pudo cerrar la sesión.");
+            });
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                landingPage.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-4 cursor-pointer" id="user-profile-button">
+                        <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <p class="font-semibold">${user.displayName}</p>
+                        </div>
+                    </div>
+                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 transform -translate-x-full">
+                        <div class="px-4 py-2 text-sm text-gray-700">
+                            <p class="font-bold">Tu ID de Usuario:</p>
+                            <p class="text-xs text-gray-500 break-all" id="user-id-display">${user.uid}</p>
+                            <button id="copy-user-id" class="text-indigo-600 text-xs mt-1">Copiar</button>
+                        </div>
+                        <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-500 hover:bg-gray-100">Cerrar sesión</a>
+                    </div>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', handleSignOut);
+                document.getElementById('user-profile-button').addEventListener('click', () => {
+                    document.getElementById('user-menu').classList.toggle('hidden');
+                });
+                document.getElementById('copy-user-id').addEventListener('click', () => {
+                    navigator.clipboard.writeText(userId);
+                    showMessage("Copiado", "Tu ID de usuario ha sido copiado al portapapeles.");
+                });
+                
+                checkUserPlan();
+                loadInitialData();
+            } else {
+                userId = null;
+                landingPage.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+            }
+        });
+        
+        // ... (el resto de las funciones JS van aquí, completas)
     </script>
 </body>
 </html>
