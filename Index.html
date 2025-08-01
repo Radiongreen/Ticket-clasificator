@@ -22,7 +22,7 @@
         .loader { border: 8px solid #f3f3f3; border-radius: 50%; border-top: 8px solid #4f46e5; width: 60px; height: 60px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .modal { transition: opacity 0.3s ease; }
-        #app-content.hidden, #login-container.hidden { display: none; }
+        #app-container.hidden, #landing-page.hidden { display: none; }
         .table-actions button:disabled { background-color: #d1d5db; cursor: not-allowed; }
         .achievement.unlocked { opacity: 1; }
         .achievement.locked { opacity: 0.4; filter: grayscale(100%); }
@@ -32,251 +32,287 @@
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <!-- Contenedor principal de la aplicación -->
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Gestor de Gastos IA v2.0</h1>
-                <p class="text-gray-600 mt-1">Tu asistente de ahorro inteligente.</p>
-            </div>
-            <div id="auth-container"></div>
+    <!-- LANDING PAGE (Visible para usuarios no logueados) -->
+    <div id="landing-page">
+        <header class="container mx-auto p-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-indigo-600">Gestor de Gastos IA</h1>
+            <button id="landing-login-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Iniciar Sesión</button>
         </header>
 
-        <!-- Contenedor de Login -->
-        <div id="login-container" class="text-center py-16">
-            <h2 class="text-2xl font-bold mb-4">Bienvenido a tu Gestor de Gastos</h2>
-            <p class="text-gray-600 mb-8">Inicia sesión con tu cuenta de Google para guardar y acceder a tus datos de forma segura.</p>
-            <button id="login-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
-                <i class="fab fa-google mr-2"></i> Iniciar sesión con Google
-            </button>
-            <p class="text-xs text-gray-500 mt-4"><i class="fas fa-shield-alt mr-1"></i>Tus datos están protegidos con cifrado a nivel bancario.</p>
-        </div>
-        
-        <!-- Contenido principal de la App (oculto hasta login) -->
-        <div id="app-content" class="hidden">
-            <!-- Navegación por pestañas -->
-            <div class="mb-8 border-b border-gray-200">
-                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
-                    <button class="tab-button active" data-tab="analizar-ticket"><i class="fas fa-receipt mr-2"></i> Analizar Ticket</button>
-                    <button class="tab-button" data-tab="mis-gastos"><i class="fas fa-chart-pie mr-2"></i> Mis Gastos</button>
-                    <button class="tab-button" data-tab="mis-productos"><i class="fas fa-tag mr-2"></i> Mis Productos</button>
-                    <button class="tab-button" data-tab="lista-compra"><i class="fas fa-list-check mr-2"></i> Lista de Compra</button>
-                    <button class="tab-button" data-tab="chef-inteligente"><i class="fas fa-utensils mr-2"></i> Chef Inteligente</button>
-                    <button class="tab-button" data-tab="logros"><i class="fas fa-trophy mr-2"></i> Mis Logros</button>
-                    <button class="tab-button" data-tab="premium"><i class="fas fa-star mr-2"></i> Premium</button>
-                </nav>
-            </div>
+        <main>
+            <section class="text-center py-20 px-6 bg-white">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">La forma más inteligente de controlar tus gastos de supermercado.</h2>
+                <p class="mt-4 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Convierte tus tickets en datos, descubre tus hábitos de consumo y deja que nuestro Chef Inteligente te diga qué cocinar para no desperdiciar comida.</p>
+                <button id="landing-register-btn" class="mt-8 bg-indigo-600 text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition-colors">Regístrate Gratis con Google</button>
+            </section>
 
-            <!-- Contenido de las pestañas -->
-            <main>
-                <!-- Pestaña: Analizar Ticket -->
-                <div id="analizar-ticket" class="tab-content active">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">1. Sube tu Ticket</h2>
-                            <div id="image-uploader" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                                <div class="space-y-1 text-center">
-                                    <i class="fas fa-camera fa-3x text-gray-400"></i>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                            <span>Sube un archivo</span>
-                                            <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*">
-                                        </label>
-                                        <p class="pl-1">o arrástralo aquí</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-                                </div>
-                            </div>
-                            <button id="process-ticket-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400" disabled>
-                                <i class="fas fa-cogs mr-2"></i> Procesar Ticket
-                            </button>
+            <section class="py-20">
+                <div class="container mx-auto px-6 text-center">
+                    <h3 class="text-3xl font-bold mb-16">Todo lo que necesitas para ahorrar de verdad</h3>
+                    <div class="grid md:grid-cols-3 gap-12">
+                        <div class="bg-white p-8 rounded-lg shadow-md">
+                            <i class="fas fa-camera fa-3x text-indigo-500"></i>
+                            <h4 class="text-xl font-bold mt-4 mb-2">Escanea y Olvídate</h4>
+                            <p class="text-gray-600">Saca una foto a tu ticket y nuestra IA extraerá cada producto, precio y categoría por ti. Di adiós a la entrada manual de datos.</p>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">2. Vista Previa</h2>
-                            <div id="image-preview-container" class="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
-                                <p>Aquí verás la imagen de tu ticket.</p>
-                            </div>
+                        <div class="bg-white p-8 rounded-lg shadow-md">
+                            <i class="fas fa-chart-pie fa-3x text-indigo-500"></i>
+                            <h4 class="text-xl font-bold mt-4 mb-2">Entiende tus Gastos</h4>
+                            <p class="text-gray-600">Con gráficos interactivos y una categorización detallada, sabrás exactamente a dónde va tu dinero. Toma el control de tus finanzas.</p>
+                        </div>
+                        <div class="bg-white p-8 rounded-lg shadow-md">
+                            <i class="fas fa-utensils fa-3x text-indigo-500"></i>
+                            <h4 class="text-xl font-bold mt-4 mb-2">Cocina con lo que Tienes</h4>
+                            <p class="text-gray-600">Nuestro Chef Inteligente analiza tu despensa virtual y te sugiere recetas deliciosas para que no desperdicies comida.</p>
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Pestaña: Mis Gastos -->
-                <div id="mis-gastos" class="tab-content">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
-                        <h2 class="text-xl font-semibold mb-4">Filtros</h2>
-                        <div class="flex flex-wrap gap-4">
-                            <select id="filter-year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
-                            <select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                            <h3 class="text-lg font-semibold mb-2">Gasto Total</h3>
-                            <p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                            <h3 class="text-lg font-semibold mb-2">Nº de Compras</h3>
-                            <p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Supermercado</h3>
-                            <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 id="category-chart-title" class="text-lg font-semibold">Gasto por Categoría Principal</h3>
-                                <button id="category-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
-                            </div>
-                            <div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div>
-                        </div>
-                    </div>
-                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">Historial de Compras</h3>
-                            <div class="table-actions">
-                                <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
-                                    <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
+            <section class="py-20 bg-white text-center">
+                <h3 class="text-3xl font-bold">¿Listo para empezar a ahorrar?</h3>
+                <button id="final-cta-btn" class="mt-8 bg-indigo-600 text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition-colors">Crea tu Cuenta Gratis</button>
+            </section>
+        </main>
+    </div>
+
+
+    <!-- CONTENEDOR PRINCIPAL DE LA APP (Oculto inicialmente) -->
+    <div id="app-container" class="hidden">
+        <div class="container mx-auto p-4 md:p-8">
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Gestor de Gastos IA v2.0</h1>
+                    <p class="text-gray-600 mt-1">Tu asistente de ahorro inteligente.</p>
+                </div>
+                <div id="auth-container"></div>
+            </header>
+            
+            <div id="app-content">
+                <!-- Navegación por pestañas -->
+                <div class="mb-8 border-b border-gray-200">
+                    <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                        <button class="tab-button active" data-tab="analizar-ticket"><i class="fas fa-receipt mr-2"></i> Analizar Ticket</button>
+                        <button class="tab-button" data-tab="mis-gastos"><i class="fas fa-chart-pie mr-2"></i> Mis Gastos</button>
+                        <button class="tab-button" data-tab="mis-productos"><i class="fas fa-tag mr-2"></i> Mis Productos</button>
+                        <button class="tab-button" data-tab="lista-compra"><i class="fas fa-list-check mr-2"></i> Lista de Compra</button>
+                        <button class="tab-button" data-tab="chef-inteligente"><i class="fas fa-utensils mr-2"></i> Chef Inteligente</button>
+                        <button class="tab-button" data-tab="logros"><i class="fas fa-trophy mr-2"></i> Mis Logros</button>
+                        <button class="tab-button" data-tab="premium"><i class="fas fa-star mr-2"></i> Premium</button>
+                    </nav>
+                </div>
+
+                <!-- Contenido de las pestañas -->
+                <main>
+                    <!-- Pestaña: Analizar Ticket -->
+                    <div id="analizar-ticket" class="tab-content active">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <h2 class="text-xl font-semibold mb-4">1. Sube tu Ticket</h2>
+                                <div id="image-uploader" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                    <div class="space-y-1 text-center">
+                                        <i class="fas fa-camera fa-3x text-gray-400"></i>
+                                        <div class="flex text-sm text-gray-600">
+                                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                                <span>Sube un archivo</span>
+                                                <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*">
+                                            </label>
+                                            <p class="pl-1">o arrástralo aquí</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                                    </div>
+                                </div>
+                                <button id="process-ticket-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400" disabled>
+                                    <i class="fas fa-cogs mr-2"></i> Procesar Ticket
                                 </button>
                             </div>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-500">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="p-4">
-                                            <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                        </th>
-                                        <th scope="col" class="px-6 py-3">Fecha</th>
-                                        <th scope="col" class="px-6 py-3">Supermercado</th>
-                                        <th scope="col" class="px-6 py-3">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="purchases-history"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div id="ads-banner" class="hidden mt-8 p-4 bg-gray-200 rounded-lg text-center text-gray-600">
-                        <p class="text-sm">Espacio para publicidad (Visible solo para usuarios gratuitos)</p>
-                        <!-- Aquí se pegaría el código de Google AdSense -->
-                    </div>
-                </div>
-
-                <!-- Pestaña: Mis Productos -->
-                <div id="mis-productos" class="tab-content">
-                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold mb-4">Gestión de Productos</h2>
-                        <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado y corregir su categorización si es necesario. Los cambios se aplicarán a todas las compras pasadas.</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left text-gray-500">
-                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3">Producto</th>
-                                        <th scope="col" class="px-6 py-3">Categoría Principal</th>
-                                        <th scope="col" class="px-6 py-3">Familia</th>
-                                        <th scope="col" class="px-6 py-3">Subfamilia</th>
-                                        <th scope="col" class="px-6 py-3">Nº Compras</th>
-                                        <th scope="col" class="px-6 py-3">Tendencia de Precio</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="products-table"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Pestaña: Lista de la Compra -->
-                <div id="lista-compra" class="tab-content">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold mb-4">Lista de la Compra Inteligente</h2>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="add-item-input" placeholder="Añadir producto..." class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
-                            <button id="add-item-btn" class="bg-indigo-600 text-white px-4 rounded-lg"><i class="fas fa-plus"></i></button>
-                        </div>
-                        <div id="shopping-list" class="space-y-2 mb-6">
-                            <!-- Los productos de la lista se añadirán aquí -->
-                        </div>
-                        <div class="border-t pt-4">
-                             <h3 class="font-semibold mb-2">Sugerencias Predictivas</h3>
-                             <p class="text-sm text-gray-600 mb-4">Basado en tus hábitos de consumo, puede que necesites reponer esto:</p>
-                             <button id="suggest-items-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias
-                             </button>
-                             <div id="suggestions-container" class="mt-4 space-y-2"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pestaña: Chef Inteligente -->
-                <div id="chef-inteligente" class="tab-content">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2>
-                        <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que probablemente tienes en tu despensa.</p>
-                        <div class="flex gap-2 mb-4">
-                            <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
-                            <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                Preguntar
-                             </button>
-                        </div>
-                        <div id="chef-suggestions-container" class="mt-6">
-                            <!-- Las sugerencias de recetas aparecerán aquí -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pestaña: Mis Logros -->
-                <div id="logros" class="tab-content">
-                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold mb-4">Mis Logros</h2>
-                        <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8">
-                            <!-- Los logros se generarán aquí -->
-                        </div>
-                        <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2>
-                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                            <div class="flex items-center">
-                                <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i>
-                                <div>
-                                    <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3>
-                                    <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <h2 class="text-xl font-semibold mb-4">2. Vista Previa</h2>
+                                <div id="image-preview-container" class="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                                    <p>Aquí verás la imagen de tu ticket.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Pestaña: Premium -->
-                <div id="premium" class="tab-content">
-                     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2>
-                        
-                        <div class="premium-feature">
-                            <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3>
-                            <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p>
-                            <div class="premium-overlay">
-                                <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
-                                <p class="font-semibold">Función Premium</p>
-                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
+                    <!-- Pestaña: Mis Gastos -->
+                    <div id="mis-gastos" class="tab-content">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                            <h2 class="text-xl font-semibold mb-4">Filtros</h2>
+                            <div class="flex flex-wrap gap-4">
+                                <select id="filter-year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
+                                <select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
                             </div>
                         </div>
-
-                        <div class="premium-feature">
-                            <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3>
-                            <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p>
-                             <div class="premium-overlay">
-                                <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
-                                <p class="font-semibold">Función Premium</p>
-                                <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                                <h3 class="text-lg font-semibold mb-2">Gasto Total</h3>
+                                <p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                                <h3 class="text-lg font-semibold mb-2">Nº de Compras</h3>
+                                <p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p>
                             </div>
                         </div>
-                     </div>
-                </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Supermercado</h3>
+                                <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 id="category-chart-title" class="text-lg font-semibold">Gasto por Categoría Principal</h3>
+                                    <button id="category-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
+                                </div>
+                                <div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div>
+                            </div>
+                        </div>
+                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Historial de Compras</h3>
+                                <div class="table-actions">
+                                    <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
+                                        <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="p-4">
+                                                <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                                            </th>
+                                            <th scope="col" class="px-6 py-3">Fecha</th>
+                                            <th scope="col" class="px-6 py-3">Supermercado</th>
+                                            <th scope="col" class="px-6 py-3">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="purchases-history"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="ads-banner" class="hidden mt-8 p-4 bg-gray-200 rounded-lg text-center text-gray-600">
+                            <p class="text-sm">Espacio para publicidad (Visible solo para usuarios gratuitos)</p>
+                            <!-- Aquí se pegaría el código de Google AdSense -->
+                        </div>
+                    </div>
 
-            </main>
+                    <!-- Pestaña: Mis Productos -->
+                    <div id="mis-productos" class="tab-content">
+                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">Gestión de Productos</h2>
+                            <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado y corregir su categorización si es necesario. Los cambios se aplicarán a todas las compras pasadas.</p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3">Producto</th>
+                                            <th scope="col" class="px-6 py-3">Categoría Principal</th>
+                                            <th scope="col" class="px-6 py-3">Familia</th>
+                                            <th scope="col" class="px-6 py-3">Subfamilia</th>
+                                            <th scope="col" class="px-6 py-3">Nº Compras</th>
+                                            <th scope="col" class="px-6 py-3">Tendencia de Precio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="products-table"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pestaña: Lista de la Compra -->
+                    <div id="lista-compra" class="tab-content">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">Lista de la Compra Inteligente</h2>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="add-item-input" placeholder="Añadir producto..." class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                                <button id="add-item-btn" class="bg-indigo-600 text-white px-4 rounded-lg"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div id="shopping-list" class="space-y-2 mb-6">
+                                <!-- Los productos de la lista se añadirán aquí -->
+                            </div>
+                            <div class="border-t pt-4">
+                                 <h3 class="font-semibold mb-2">Sugerencias Predictivas</h3>
+                                 <p class="text-sm text-gray-600 mb-4">Basado en tus hábitos de consumo, puede que necesites reponer esto:</p>
+                                 <button id="suggest-items-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                    <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias
+                                 </button>
+                                 <div id="suggestions-container" class="mt-4 space-y-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña: Chef Inteligente -->
+                    <div id="chef-inteligente" class="tab-content">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2>
+                            <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que probablemente tienes en tu despensa.</p>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                                <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                    Preguntar
+                                 </button>
+                            </div>
+                            <div id="chef-suggestions-container" class="mt-6">
+                                <!-- Las sugerencias de recetas aparecerán aquí -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña: Mis Logros -->
+                    <div id="logros" class="tab-content">
+                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">Mis Logros</h2>
+                            <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8">
+                                <!-- Los logros se generarán aquí -->
+                            </div>
+                            <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2>
+                            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i>
+                                    <div>
+                                        <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3>
+                                        <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestaña: Premium -->
+                    <div id="premium" class="tab-content">
+                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2>
+                            
+                            <div class="premium-feature">
+                                <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3>
+                                <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p>
+                                <div class="premium-overlay">
+                                    <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
+                                    <p class="font-semibold">Función Premium</p>
+                                    <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
+                                </div>
+                            </div>
+
+                            <div class="premium-feature">
+                                <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3>
+                                <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p>
+                                 <div class="premium-overlay">
+                                    <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
+                                    <p class="font-semibold">Función Premium</p>
+                                    <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+
+                </main>
+            </div>
         </div>
     </div>
 
@@ -493,13 +529,15 @@
 
         const cleanLabel = (label) => label.replace(/^\d+(\.\d+)*\.\s*/, '');
 
-        // --- MANEJO DE AUTENTICACIÓN ---
-        const loginContainer = document.getElementById('login-container');
-        const appContent = document.getElementById('app-content');
+        // --- MANEJO DE AUTENTICACIÓN Y VISIBILIDAD DE PÁGINA ---
+        const landingPage = document.getElementById('landing-page');
+        const appContainer = document.getElementById('app-container');
+        const landingLoginBtn = document.getElementById('landing-login-btn');
+        const landingRegisterBtn = document.getElementById('landing-register-btn');
+        const finalCtaBtn = document.getElementById('final-cta-btn');
         const authContainer = document.getElementById('auth-container');
-        const loginBtn = document.getElementById('login-btn');
 
-        loginBtn.addEventListener('click', () => {
+        const handleLogin = () => {
             signInWithPopup(auth, provider)
                 .catch((error) => {
                     if (error.code === 'auth/unauthorized-domain') {
@@ -512,7 +550,11 @@
                         showMessage("Error de Autenticación", `No se pudo iniciar sesión con Google. Error: ${error.message}`);
                     }
                 });
-        });
+        };
+
+        landingLoginBtn.addEventListener('click', handleLogin);
+        landingRegisterBtn.addEventListener('click', handleLogin);
+        finalCtaBtn.addEventListener('click', handleLogin);
 
         const handleSignOut = () => {
             signOut(auth).catch((error) => {
@@ -524,8 +566,8 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userId = user.uid;
-                loginContainer.classList.add('hidden');
-                appContent.classList.remove('hidden');
+                landingPage.classList.add('hidden');
+                appContainer.classList.remove('hidden');
                 authContainer.innerHTML = `
                     <div class="flex items-center gap-4">
                         <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
@@ -540,11 +582,8 @@
                 loadInitialData();
             } else {
                 userId = null;
-                loginContainer.classList.remove('hidden');
-                appContent.classList.add('hidden');
-                authContainer.innerHTML = '';
-                allPurchases = [];
-                renderDashboard();
+                landingPage.classList.remove('hidden');
+                appContainer.classList.add('hidden');
             }
         });
 
@@ -878,11 +917,9 @@
                     
                     const daysSincePurchase = (today - lastPurchaseDate) / (1000 * 60 * 60 * 24);
 
-                    // Decay factor: probability decreases linearly over the shelf life
                     let probability = Math.max(0, 1 - (daysSincePurchase / shelfLife));
 
                     if (pantry[productName]) {
-                        // If we already have this product, update if this purchase is more recent
                         if (lastPurchaseDate > pantry[productName].lastPurchaseDate) {
                             pantry[productName] = { ...item, lastPurchaseDate, probability };
                         }
@@ -891,7 +928,6 @@
                     }
                 });
             });
-            // Return top ingredients sorted by probability
             return Object.values(pantry).filter(p => p.probability > 0.1).sort((a, b) => b.probability - a.probability);
         }
 
@@ -911,6 +947,7 @@
                     const pantry = inferPantryInventory();
                     if (pantry.length < 3) {
                          showMessage("Chef Inteligente", "No tengo suficiente información sobre tu despensa. ¡Sigue escaneando tickets!");
+                         processingOverlay.classList.add('hidden');
                          return;
                     }
 
