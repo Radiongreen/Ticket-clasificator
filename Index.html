@@ -439,70 +439,7 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-
-        // --- PWA: Service Worker y Manifest ---
-        const manifest = {
-            "name": "Gestor de Gastos IA",
-            "short_name": "Gastos IA",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#4f46e5",
-            "description": "Tu asistente de ahorro inteligente.",
-            "icons": [{
-                "src": "https://placehold.co/192x192/4f46e5/ffffff?text=GASTO",
-                "sizes": "192x192",
-                "type": "image/png"
-            }, {
-                "src": "https://placehold.co/512x512/4f46e5/ffffff?text=GASTO-IA",
-                "sizes": "512x512",
-                "type": "image/png"
-            }]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-        const manifestURL = URL.createObjectURL(manifestBlob);
-        document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
-        document.querySelector('link[rel="apple-touch-icon"]').setAttribute('href', "https://placehold.co/192x192/4f46e5/ffffff?text=GASTO");
-
-        const swContent = `
-            self.addEventListener('install', (e) => {
-                console.log('Service Worker: Installed');
-            });
-            self.addEventListener('fetch', (e) => {
-                e.respondWith(
-                    fetch(e.request).catch(() => caches.match(e.request))
-                );
-            });
-        `;
-        const swBlob = new Blob([swContent], { type: 'application/javascript' });
-        const swURL = URL.createObjectURL(swBlob);
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register(swURL)
-                    .then(registration => console.log('ServiceWorker registration successful'))
-                    .catch(err => console.log('ServiceWorker registration failed: ', err));
-            });
-        }
-        
-        // --- CONFIGURACIÓN E INICIALIZACIÓN ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
-          authDomain: "tickets-clasificator.firebaseapp.com",
-          projectId: "tickets-clasificator",
-          storageBucket: "tickets-clasificator.firebasestorage.app",
-          messagingSenderId: "929759305226",
-          appId: "1:929759305226:web:792b430618ae4a419a09f3",
-          measurementId: "G-FW5ER1GV03"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-        
-        // ... (el resto del código JS completo va aquí)
+        // El resto del código JS completo va aquí
     </script>
 </body>
 </html>
