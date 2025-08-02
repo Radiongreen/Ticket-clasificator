@@ -175,7 +175,7 @@
                                 <select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
                                 <h3 class="text-lg font-semibold mb-2">Gasto Total</h3>
                                 <p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p>
@@ -183,6 +183,10 @@
                             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
                                 <h3 class="text-lg font-semibold mb-2">Nº de Compras</h3>
                                 <p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
+                                <h3 class="text-lg font-semibold mb-2">vs. Mes Anterior</h3>
+                                <div id="monthly-comparison" class="text-3xl font-bold text-gray-500">--</div>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -200,8 +204,11 @@
                         </div>
                          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold">Historial de Compras</h3>
-                                <div class="table-actions">
+                                <h3 class="text-lg font-semibold" id="history-title">Historial de Compras</h3>
+                                <div class="table-actions flex items-center gap-4">
+                                    <button id="reset-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                                        <i class="fas fa-times mr-2"></i>Quitar Filtro
+                                    </button>
                                     <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
                                         <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
                                     </button>
@@ -513,6 +520,7 @@
         let categoryChartLevel = 1; 
         let selectedPrincipal = null;
         let selectedFamilia = null;
+        let chartFilter = { type: null, value: null };
         let unsubscribePurchases = () => {};
         let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
@@ -717,6 +725,7 @@
             document.getElementById('select-all-checkbox').addEventListener('change', handleSelectAll);
             document.getElementById('delete-selected-btn').addEventListener('click', confirmDeleteSelected);
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
+            document.getElementById('reset-filter-btn').addEventListener('click', resetChartFilter);
             
             // Mis Productos
             document.getElementById('products-table').addEventListener('click', (e) => {
@@ -1220,7 +1229,23 @@
             const month = document.getElementById('filter-month').value;
             const context = document.getElementById('context-filter').value;
 
-            currentFilteredPurchases = allPurchases.filter(p => {
+            let basePurchases = allPurchases;
+
+            // Apply chart filters if they exist
+            if (chartFilter.type && chartFilter.value) {
+                if (chartFilter.type === 'supermarket') {
+                    basePurchases = basePurchases.filter(p => p.supermercado === chartFilter.value);
+                } else if (chartFilter.type === 'category') {
+                    basePurchases = basePurchases.filter(p => p.productos.some(prod => prod.categoria_principal === chartFilter.value));
+                }
+                 document.getElementById('reset-filter-btn').classList.remove('hidden');
+                 document.getElementById('history-title').textContent = `Historial de: ${chartFilter.value}`;
+            } else {
+                document.getElementById('reset-filter-btn').classList.add('hidden');
+                document.getElementById('history-title').textContent = 'Historial de Compras';
+            }
+
+            currentFilteredPurchases = basePurchases.filter(p => {
                 const purchaseDate = new Date(p.fecha);
                 const yearMatch = year === 'all' || purchaseDate.getFullYear() == year;
                 const monthMatch = month === 'all' || (purchaseDate.getMonth() + 1) == month;
@@ -1385,6 +1410,40 @@
             const totalExpense = currentFilteredPurchases.reduce((sum, p) => sum + p.total, 0);
             document.getElementById('total-expense').textContent = `${totalExpense.toFixed(2)} €`;
             document.getElementById('total-purchases').textContent = currentFilteredPurchases.length;
+            
+            // Monthly comparison logic
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            const comparisonDiv = document.getElementById('monthly-comparison');
+
+            if (year !== 'all' && month !== 'all') {
+                const currentMonth = parseInt(month);
+                const currentYear = parseInt(year);
+
+                let prevMonth = currentMonth - 1;
+                let prevYear = currentYear;
+                if (prevMonth === 0) {
+                    prevMonth = 12;
+                    prevYear--;
+                }
+
+                const prevMonthPurchases = allPurchases.filter(p => {
+                    const d = new Date(p.fecha);
+                    return d.getFullYear() === prevYear && (d.getMonth() + 1) === prevMonth;
+                });
+                const prevMonthTotal = prevMonthPurchases.reduce((sum, p) => sum + p.total, 0);
+
+                if (prevMonthTotal > 0) {
+                    const percentageChange = ((totalExpense - prevMonthTotal) / prevMonthTotal) * 100;
+                    const color = percentageChange > 0 ? 'text-red-500' : 'text-green-500';
+                    const icon = percentageChange > 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+                    comparisonDiv.innerHTML = `<span class="${color}">${icon} ${percentageChange.toFixed(1)}%</span>`;
+                } else {
+                    comparisonDiv.textContent = 'N/A';
+                }
+            } else {
+                comparisonDiv.textContent = '--';
+            }
         }
 
         function renderPurchasesHistory() {
@@ -1556,7 +1615,18 @@
                         backgroundColor: chartColors,
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, legend: { position: 'bottom' } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    legend: { position: 'bottom' },
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const clickedLabel = supermarketChart.data.labels[elements[0].index];
+                            chartFilter = { type: 'supermarket', value: clickedLabel };
+                            renderDashboard();
+                        }
+                    }
+                }
             });
         }
         
@@ -1599,11 +1669,19 @@
                 }
             });
         }
+        
+        function resetChartFilter() {
+            chartFilter = { type: null, value: null };
+            renderDashboard();
+        }
 
         function handleCategoryChartClick(evt, elements) {
             if (elements.length > 0) {
                 const clickedLabel = categoryChart.data.labels[elements[0].index];
                 if (categoryChartLevel === 1) {
+                    chartFilter = { type: 'category', value: clickedLabel };
+                    renderDashboard();
+                    
                     selectedPrincipal = clickedLabel;
                     categoryChartLevel = 2;
                     document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
@@ -1626,6 +1704,7 @@
                 categoryChartLevel = 1;
                 document.getElementById('category-chart-title').textContent = 'Gasto por Categoría Principal';
                 document.getElementById('category-chart-back-btn').classList.add('hidden');
+                resetChartFilter();
             }
             renderCategoryChart();
         }
