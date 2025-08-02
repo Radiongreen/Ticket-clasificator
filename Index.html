@@ -1034,18 +1034,25 @@
             const content = document.getElementById('confirmation-content');
             
             const productRows = data.productos.map((p, index) => {
+                // --- VALIDATION LOGIC ---
+                if (!categorias[p.categoria_principal]) {
+                    p.categoria_principal = Object.keys(categorias)[0];
+                    p.familia = null;
+                    p.subfamilia = null;
+                }
+                if (!p.familia || !categorias[p.categoria_principal][p.familia]) {
+                    p.familia = Object.keys(categorias[p.categoria_principal])[0];
+                    p.subfamilia = null;
+                }
+                const subfamilias = categorias[p.categoria_principal][p.familia] || [];
+                if (!p.subfamilia || !subfamilias.includes(p.subfamilia)) {
+                    p.subfamilia = subfamilias[0] || null;
+                }
+                // --- END VALIDATION ---
+
                 const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
-                
-                let familiaOptions = '';
-                if (p.categoria_principal && categorias[p.categoria_principal]) {
-                    familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
-                }
-
-                let subfamiliaOptions = '';
-                if (p.categoria_principal && p.familia && categorias[p.categoria_principal][p.familia]) {
-                    subfamiliaOptions = categorias[p.categoria_principal][p.familia].map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
-                }
-
+                const familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
+                const subfamiliaOptions = subfamilias.map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
 
                 return `
                 <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
@@ -1076,16 +1083,7 @@
                     ${productRows}
                 </div>
             `;
-            // Bug fix: Ensure dropdowns are populated even if AI returns no category
-            document.querySelectorAll('.confirm-cat-principal').forEach((select, index) => {
-                const familiaSelectId = `confirm-cat-familia-${index}`;
-                if (!select.value || !categorias[select.value]) {
-                    document.getElementById(familiaSelectId).innerHTML = '';
-                    populateSubfamiliaDropdown(null, `confirm-cat-subfamilia-${index}`, null, null);
-                } else if (!document.getElementById(familiaSelectId).value) {
-                     populateFamiliaDropdown(null, familiaSelectId, select.value);
-                }
-            });
+            
             updateConfirmationTotal();
             showModal('confirmation-modal');
         }
