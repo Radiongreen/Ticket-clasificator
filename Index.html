@@ -1035,8 +1035,17 @@
             
             const productRows = data.productos.map((p, index) => {
                 const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
-                const familiaOptions = p.categoria_principal && categorias[p.categoria_principal] ? Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('') : '';
-                const subfamiliaOptions = p.familia && categorias[p.categoria_principal] && categorias[p.categoria_principal][p.familia] ? categorias[p.categoria_principal][p.familia].map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('') : '';
+                
+                let familiaOptions = '';
+                if (p.categoria_principal && categorias[p.categoria_principal]) {
+                    familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
+                }
+
+                let subfamiliaOptions = '';
+                if (p.categoria_principal && p.familia && categorias[p.categoria_principal][p.familia]) {
+                    subfamiliaOptions = categorias[p.categoria_principal][p.familia].map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
+                }
+
 
                 return `
                 <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
@@ -1068,9 +1077,14 @@
                 </div>
             `;
             // Bug fix: Ensure dropdowns are populated even if AI returns no category
-            document.querySelectorAll('.confirm-cat-principal').forEach(select => {
-                if (!select.value) {
-                    populateFamiliaDropdown(null, select.id.replace('principal', 'familia'), select.value);
+            document.querySelectorAll('.confirm-cat-principal').forEach((select, index) => {
+                const familiaSelectId = `confirm-cat-familia-${index}`;
+                const subfamiliaSelectId = `confirm-cat-subfamilia-${index}`;
+                if (!select.value || !categorias[select.value]) {
+                    document.getElementById(familiaSelectId).innerHTML = '';
+                    document.getElementById(subfamiliaSelectId).innerHTML = '';
+                } else if (!document.getElementById(familiaSelectId).value) {
+                     populateFamiliaDropdown(null, familiaSelectId, select.value);
                 }
             });
             updateConfirmationTotal();
