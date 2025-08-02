@@ -879,7 +879,7 @@
                 };
 
                 const apiKey = firebaseConfig.apiKey;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -1219,7 +1219,7 @@
         }
 
         function renderSupermarketChart() {
-            const ctx = document.getElementById('supermarket-chart').getContext('2d');
+            const ctx = document.getElementById('supermarket-chart').getContext('d');
             const data = currentFilteredPurchases.reduce((acc, p) => {
                 acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
                 return acc;
