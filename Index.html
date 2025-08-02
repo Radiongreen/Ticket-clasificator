@@ -446,8 +446,8 @@
         let currentUser = null;
         let userProfile = null;
         let allPurchases = [];
+        let allUserProducts = [];
         let currentFilteredPurchases = [];
-        let allProducts = new Map();
         let selectedPurchases = new Set();
         let supermarketChart = null;
         let categoryChart = null;
@@ -457,6 +457,7 @@
         let selectedPrincipal = null;
         let selectedFamilia = null;
         let unsubscribePurchases = () => {};
+        let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
 
         // --- DEFINICIÓN DE CATEGORÍAS ---
@@ -482,6 +483,7 @@
         onAuthStateChanged(auth, async (user) => {
             // Limpiar listeners anteriores para evitar duplicados
             unsubscribePurchases();
+            unsubscribeProducts();
             unsubscribeProfile();
 
             if (user) {
@@ -523,30 +525,35 @@
                 updateContextFilter(userProfile);
                 // Volver a cargar los datos si el householdId cambia
                 loadInitialData(); 
+                loadProducts();
             });
         }
 
         function loadInitialData() {
-            if (!currentUser || !userProfile) return;
+            if (!currentUser) return;
             
             unsubscribePurchases(); // Detener listener anterior
 
-            const queries = [
-                query(collection(db, "tickets"), where("userId", "==", currentUser.uid))
-            ];
-
-            if (userProfile.householdId) {
-                queries.push(query(collection(db, "tickets"), where("householdId", "==", userProfile.householdId)));
-            }
+            const ticketsQuery = query(collection(db, "tickets"), where("userId", "==", currentUser.uid));
 
             // Usamos onSnapshot para escuchar cambios en tiempo real
-            unsubscribePurchases = onSnapshot(query(collection(db, "tickets"), where("userId", "in", getAuthorizedIds())), (snapshot) => {
+            unsubscribePurchases = onSnapshot(ticketsQuery, (snapshot) => {
                 allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // loadAllProducts(); // Esta función aún no está implementada
                 populateFilters();
                 renderDashboard();
             });
         }
+        
+        function loadProducts() {
+            if (!currentUser) return;
+            unsubscribeProducts();
+            const productsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
+            unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+                allUserProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProductsTable();
+            });
+        }
+
 
         function getAuthorizedIds() {
             const ids = [currentUser.uid];
@@ -1149,8 +1156,8 @@
 
         function resetAppState() {
             allPurchases = [];
+            allUserProducts = [];
             currentFilteredPurchases = [];
-            allProducts.clear();
             selectedPurchases.clear();
             if (supermarketChart) supermarketChart.destroy();
             if (categoryChart) categoryChart.destroy();
@@ -1221,8 +1228,31 @@
         }
         
         function renderProductsTable() {
-            const table = document.getElementById('products-table');
-            table.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Función en desarrollo.</td></tr>';
+            const tbody = document.getElementById('products-table');
+            if (allUserProducts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">Aún no has escaneado ningún producto.</td></tr>';
+                return;
+            }
+
+            const productCounts = allPurchases.flatMap(p => p.productos).reduce((acc, prod) => {
+                const key = prod.nombre.toLowerCase();
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+
+            tbody.innerHTML = allUserProducts
+                .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Sort alphabetically
+                .map(p => {
+                    const count = productCounts[p.nombre.toLowerCase()] || 0;
+                    return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
+                        <td class="px-6 py-4">${p.categoria_principal}</td>
+                        <td class="px-6 py-4">${p.familia}</td>
+                        <td class="px-6 py-4">${p.subfamilia}</td>
+                        <td class="px-6 py-4 text-center">${count}</td>
+                    </tr>
+                `}).join('');
         }
 
         function renderSupermarketChart() {
