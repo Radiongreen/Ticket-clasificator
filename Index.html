@@ -1079,6 +1079,16 @@
             }).join('');
 
             content.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Supermercado</label>
+                        <input type="text" id="confirm-supermarket-name" value="${data.supermercado}" class="confirm-input mt-1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Dirección</label>
+                        <input type="text" id="confirm-supermarket-address" value="${data.direccion_supermercado || 'No encontrada'}" class="confirm-input mt-1" readonly>
+                    </div>
+                </div>
                 <div class="space-y-2">
                     <div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2">
                         <div class="col-span-3">Nombre</div>
@@ -1123,6 +1133,8 @@
             });
             currentTicketData.productos = newProductos;
             currentTicketData.total = newProductos.reduce((sum, p) => sum + p.precio, 0);
+            currentTicketData.supermercado = document.getElementById('confirm-supermarket-name').value;
+            currentTicketData.direccion_supermercado = document.getElementById('confirm-supermarket-address').value;
         }
 
 
@@ -1187,6 +1199,7 @@
                     userId: currentUser.uid,
                     householdId: ticketHouseholdId,
                     supermercado: currentTicketData.supermercado,
+                    direccion_supermercado: currentTicketData.direccion_supermercado || null,
                     fecha: currentTicketData.fecha,
                     total: currentTicketData.total,
                     productos: currentTicketData.productos,
@@ -1279,6 +1292,7 @@
                 El JSON debe tener la siguiente estructura:
                 {
                   "supermercado": "string", // Nombre del supermercado
+                  "direccion_supermercado": "string", // Dirección física del supermercado si aparece, si no, null.
                   "fecha": "string", // Fecha en formato YYYY-MM-DD
                   "productos": [
                     {
@@ -1438,7 +1452,10 @@
                     const color = percentageChange > 0 ? 'text-red-500' : 'text-green-500';
                     const icon = percentageChange > 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
                     comparisonDiv.innerHTML = `<span class="${color}">${icon} ${percentageChange.toFixed(1)}%</span>`;
-                } else {
+                } else if (totalExpense > 0) {
+                    comparisonDiv.innerHTML = `<span class="text-green-500">--</span>`;
+                }
+                 else {
                     comparisonDiv.textContent = 'N/A';
                 }
             } else {
