@@ -427,9 +427,8 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
-        // ¡CONFIGURACIÓN CORREGIDA!
         const firebaseConfig = {
-          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
+          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ", // <-- Clave de API principal de Firebase ("Browser key")
           authDomain: "tickets-clasificator.firebaseapp.com",
           projectId: "tickets-clasificator",
           storageBucket: "tickets-clasificator.firebasestorage.app",
