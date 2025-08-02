@@ -33,6 +33,21 @@
         #user-menu { transition: opacity 0.3s, transform 0.3s; }
         .nav-container { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
         .nav-container::-webkit-scrollbar { display: none; }
+        .confirm-input {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            width: 100%;
+        }
+        .confirm-select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            width: 100%;
+            background-color: white;
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -357,15 +372,18 @@
         </div>
     </div>
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-auto max-h-[90vh] flex flex-col">
             <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">Confirmar Datos del Ticket</h3>
-                <p class="text-sm text-gray-600">Revisa los datos extraídos por la IA. Si son correctos, guárdalos.</p>
+                <h3 class="text-xl font-bold text-gray-900">Confirmar y Editar Datos del Ticket</h3>
+                <p class="text-sm text-gray-600">Revisa y corrige los datos extraídos por la IA antes de guardar.</p>
             </div>
             <div id="confirmation-content" class="p-6 overflow-y-auto"></div>
-            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
-                <button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
-                <button id="confirm-continue-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Continuar a Asignación</button>
+            <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
+                <div class="font-bold text-lg">Total: <span id="confirmation-total">0.00</span>€</div>
+                <div class="flex gap-4">
+                    <button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                    <button id="confirm-continue-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Continuar a Asignación</button>
+                </div>
             </div>
         </div>
     </div>
@@ -656,8 +674,37 @@
 
             // Confirmación y guardado
             document.getElementById('confirm-cancel-btn').addEventListener('click', () => hideModal('confirmation-modal'));
-            document.getElementById('confirm-continue-btn').addEventListener('click', showAssignExpenseModal);
+            document.getElementById('confirm-continue-btn').addEventListener('click', () => {
+                updateTicketDataFromModal();
+                showAssignExpenseModal();
+            });
             document.getElementById('assign-save-btn').addEventListener('click', saveTicketData);
+            document.getElementById('confirmation-content').addEventListener('change', (e) => {
+                if(e.target.classList.contains('confirm-price-input')) {
+                    updateConfirmationTotal();
+                }
+                if(e.target.classList.contains('confirm-cat-principal')) {
+                    const index = e.target.dataset.index;
+                    populateFamiliaDropdown(null, `confirm-cat-familia-${index}`, e.target.value);
+                }
+                if(e.target.classList.contains('confirm-cat-familia')) {
+                    const index = e.target.dataset.index;
+                    const principalSelect = document.getElementById(`confirm-cat-principal-${index}`);
+                    populateSubfamiliaDropdown(null, `confirm-cat-subfamilia-${index}`, principalSelect.value, e.target.value);
+                }
+            });
+            document.getElementById('confirmation-content').addEventListener('click', (e) => {
+                if (e.target.closest('.delete-product-row-btn')) {
+                    const button = e.target.closest('.delete-product-row-btn');
+                    const index = button.dataset.index;
+                    const row = document.getElementById(`product-row-${index}`);
+                    if (row) {
+                        row.remove();
+                        updateConfirmationTotal();
+                    }
+                }
+            });
+
 
             // Mis Gastos
             document.getElementById('filter-year').addEventListener('change', renderDashboard);
@@ -676,8 +723,8 @@
             });
             document.getElementById('edit-product-cancel-btn').addEventListener('click', () => hideModal('edit-product-modal'));
             document.getElementById('edit-product-save-btn').addEventListener('click', saveProductChanges);
-            document.getElementById('edit-category-principal').addEventListener('change', populateFamiliaDropdown);
-            document.getElementById('edit-category-familia').addEventListener('change', populateSubfamiliaDropdown);
+            document.getElementById('edit-category-principal').addEventListener('change', () => populateFamiliaDropdown(null, 'edit-category-familia', document.getElementById('edit-category-principal').value));
+            document.getElementById('edit-category-familia').addEventListener('change', () => populateSubfamiliaDropdown(null, 'edit-category-subfamilia', document.getElementById('edit-category-principal').value, document.getElementById('edit-category-familia').value));
         }
 
         // --- RENDERIZADO DE COMPONENTES DE UI ---
@@ -981,19 +1028,73 @@
 
         function showConfirmationModal(data) {
             const content = document.getElementById('confirmation-content');
+            
+            const productRows = data.productos.map((p, index) => {
+                const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
+                const familiaOptions = p.categoria_principal && categorias[p.categoria_principal] ? Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('') : '';
+                const subfamiliaOptions = p.familia && categorias[p.categoria_principal] && categorias[p.categoria_principal][p.familia] ? categorias[p.categoria_principal][p.familia].map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('') : '';
+
+                return `
+                <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
+                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}"></div>
+                    <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
+                    <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-familia" id="confirm-cat-familia-${index}" data-index="${index}">${familiaOptions}</select></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
+                    <div class="col-span-1 text-center">
+                        <button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
             content.innerHTML = `
-                <div class="space-y-4">
-                    <div><strong>Supermercado:</strong> ${data.supermercado}</div>
-                    <div><strong>Fecha:</strong> ${data.fecha}</div>
-                    <h4 class="font-bold mt-4">Productos:</h4>
-                    <ul class="list-disc pl-5 space-y-1">
-                        ${data.productos.map(p => `<li>${p.cantidad}x ${p.nombre} - ${p.precio.toFixed(2)}€ (${p.categoria_principal} -> ${p.familia} -> ${p.subfamilia})</li>`).join('')}
-                    </ul>
-                    <div class="text-right font-bold text-lg mt-4">Total: ${data.total.toFixed(2)}€</div>
+                <div class="space-y-2">
+                    <div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2">
+                        <div class="col-span-3">Nombre</div>
+                        <div class="col-span-1">Cant.</div>
+                        <div class="col-span-1">Precio</div>
+                        <div class="col-span-2">Categoría</div>
+                        <div class="col-span-2">Familia</div>
+                        <div class="col-span-2">Subfamilia</div>
+                        <div class="col-span-1"></div>
+                    </div>
+                    ${productRows}
                 </div>
             `;
+            updateConfirmationTotal();
             showModal('confirmation-modal');
         }
+        
+        function updateConfirmationTotal() {
+            let total = 0;
+            document.querySelectorAll('.confirm-price-input').forEach(input => {
+                if(input.closest('.product-row')) { // Only count rows that haven't been deleted
+                    total += parseFloat(input.value) || 0;
+                }
+            });
+            document.getElementById('confirmation-total').textContent = total.toFixed(2);
+        }
+
+        function updateTicketDataFromModal() {
+            const newProductos = [];
+            document.querySelectorAll('.product-row').forEach((row, index) => {
+                const originalIndex = row.id.split('-')[2];
+                const newProduct = {
+                    nombre: row.querySelector('.confirm-name-input').value,
+                    cantidad: parseInt(row.querySelector('.confirm-qty-input').value, 10),
+                    precio: parseFloat(row.querySelector('.confirm-price-input').value),
+                    categoria_principal: row.querySelector('.confirm-cat-principal').value,
+                    familia: row.querySelector('.confirm-cat-familia').value,
+                    subfamilia: row.querySelector('.confirm-cat-subfamilia').value,
+                };
+                newProductos.push(newProduct);
+            });
+            currentTicketData.productos = newProductos;
+            currentTicketData.total = newProductos.reduce((sum, p) => sum + p.precio, 0);
+        }
+
 
         function showAssignExpenseModal() {
             hideModal('confirmation-modal');
@@ -1333,35 +1434,32 @@
             document.getElementById('edit-product-original-name').value = product.nombre;
             document.getElementById('edit-product-name').value = product.nombre;
             
-            populatePrincipalDropdown(product.categoria_principal);
-            populateFamiliaDropdown(product.familia);
-            populateSubfamiliaDropdown(product.subfamilia);
+            populatePrincipalDropdown('edit-category-principal', product.categoria_principal);
+            populateFamiliaDropdown(product.familia, 'edit-category-familia', product.categoria_principal);
+            populateSubfamiliaDropdown(product.subfamilia, 'edit-category-subfamilia', product.categoria_principal, product.familia);
 
             showModal('edit-product-modal');
         }
 
-        function populatePrincipalDropdown(selectedValue) {
-            const select = document.getElementById('edit-category-principal');
+        function populatePrincipalDropdown(selectId, selectedValue) {
+            const select = document.getElementById(selectId);
             select.innerHTML = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`).join('');
         }
 
-        function populateFamiliaDropdown(selectedValue) {
-            const principal = document.getElementById('edit-category-principal').value;
-            const select = document.getElementById('edit-category-familia');
-            if (categorias[principal]) {
-                select.innerHTML = Object.keys(categorias[principal]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join('');
+        function populateFamiliaDropdown(selectedValue, selectId, principalValue) {
+            const select = document.getElementById(selectId);
+            if (categorias[principalValue]) {
+                select.innerHTML = Object.keys(categorias[principalValue]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join('');
             } else {
                 select.innerHTML = '';
             }
-            populateSubfamiliaDropdown();
+            populateSubfamiliaDropdown(null, selectId.replace('familia', 'subfamilia'), principalValue, select.value);
         }
 
-        function populateSubfamiliaDropdown(selectedValue) {
-            const principal = document.getElementById('edit-category-principal').value;
-            const familia = document.getElementById('edit-category-familia').value;
-            const select = document.getElementById('edit-category-subfamilia');
-            if (categorias[principal] && categorias[principal][familia]) {
-                select.innerHTML = categorias[principal][familia].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join('');
+        function populateSubfamiliaDropdown(selectedValue, selectId, principalValue, familiaValue) {
+            const select = document.getElementById(selectId);
+            if (categorias[principalValue] && categorias[principalValue][familiaValue]) {
+                select.innerHTML = categorias[principalValue][familiaValue].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join('');
             } else {
                 select.innerHTML = '';
             }
