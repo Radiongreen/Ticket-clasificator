@@ -40,6 +40,10 @@
             font-size: 0.875rem;
             width: 100%;
         }
+        .confirm-input:read-only {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
         .confirm-select {
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
@@ -1036,7 +1040,7 @@
 
                 return `
                 <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
-                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}"></div>
+                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly title="La edición del nombre se realizará en la pestaña 'Mis Productos' para mantener la consistencia."></div>
                     <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
                     <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
                     <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
@@ -1063,6 +1067,12 @@
                     ${productRows}
                 </div>
             `;
+            // Bug fix: Ensure dropdowns are populated even if AI returns no category
+            document.querySelectorAll('.confirm-cat-principal').forEach(select => {
+                if (!select.value) {
+                    populateFamiliaDropdown(null, select.id.replace('principal', 'familia'), select.value);
+                }
+            });
             updateConfirmationTotal();
             showModal('confirmation-modal');
         }
@@ -1258,27 +1268,27 @@
                   - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
                   - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado]
                   - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos]
-                  - 🍞🥐 Panadería y Pastelería: [🥖 Pan, 🍩 Bollería, 🍰 Pasteles, 🍪 Galletas]
-                  - 🌾🫘 Cereales y Legumbres: [🍚 Arroz, 🍝 Pasta, 🥣 Legumbres Secas, 🥣 Cereales de Desayuno]
-                  - 🍾🍶 Aceites, Vinagres y Salsas: [🫒 Aceites Comestibles, 🍇 Vinagres, 🥫 Salsas Preparadas, 🧂 Condimentos y Especias]
-                  - 🥫🥡 Conservas y Platos Preparados: [🫙 Conservas Vegetales, 🥩 Conservas Cárnicas, 🍲 Platos Listos para Consumir]
-                  - 🧊 Congelados: [🥦 Verduras Congeladas, 🐟 Pescado Congelado, 🍕 Comidas Preparadas Congeladas, 🍨 Helados]
-                  - 🥤 Bebidas: [🧃 Bebidas No Alcohólicas, 🍺 Bebidas Alcohólicas]
-                  - 🥨🍬 Snacks y Dulces: [🍟 Patatas Fritas y Aperitivos, 🍫 Chocolates y Golosinas, 🥜 Frutos Secos]
-                  - ❤️‍🩹 Dietéticos y Especiales: [🚫🌾 Sin Gluten, 🚫🥛 Sin Lactosa, 🌱 Orgánicos/Biológicos, 🌿 Vegetarianos/Veganos]
+                  - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"]
+                  - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"]
+                  - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"]
+                  - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"]
+                  - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"]
+                  - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"]
+                  - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"]
+                  - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
                 - 🏠 HOGAR Y LIMPIEZA
-                  - 🧼🧽 Productos de Limpieza: [🧴 Limpiadores Multiusos, 🧺 Detergentes para Ropa, 🚽 Productos de Baño y Cocina, 🦟 Insecticidas]
-                  - 🍴🍽️ Menaje y Utensilios: [🍷 Vajilla y Cristalería, 🍳 Batería de Cocina, 🔌 Pequeños Electrodomésticos]
-                  - 🏡 Cuidado del Hogar: [🧻 Papel de Cocina y Servilletas, 🗑️ Bolsas de Basura, 🔋💡 Pilas y Bombillas, 🌬️ Ambientadores]
+                  - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"]
+                  - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"]
+                  - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
                 - 🧴 HIGIENE Y CUIDADO PERSONAL
-                  - 🚿🧼 Higiene Diaria: [🧴 Champú y Acondicionador, 🧼 Gel de Ducha y Jabón, 🦷 Pasta de Dientes y Cuidado Bucal, 💨 Desodorantes]
-                  - 💆‍♀️💅 Cuidado Facial y Corporal: [🧴 Cremas y Lociones, 💄 Maquillaje, ☀️ Protector Solar]
-                  - ⚕️💊 Farmacia/Parafarmacia: [💊 Medicamentos Sin Receta, 💪 Suplementos y Vitaminas, 🩹 Material de Primeros Auxilios]
+                  - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"]
+                  - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"]
+                  - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
                 - 🐾 MASCOTAS
-                  - 🦴🍖 Alimento para Mascotas: [🐶 Perros, 🐱 Gatos, 🐹 Otras Mascotas]
-                  - 🧸 Accesorios para Mascotas: [🎾 Juguetes, 🧼 Productos de Higiene para Mascotas]
+                  - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"]
+                  - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
                 - 💸 OTROS GASTOS
-                  - 🛍️ Varios: [🎁 Regalos, 📰 Prensa y Revistas, ❓ Sin especificar]
+                  - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
 
                 Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.
             `;
