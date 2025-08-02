@@ -224,6 +224,7 @@
                                             <th scope="col" class="px-6 py-3">Familia</th>
                                             <th scope="col" class="px-6 py-3">Subfamilia</th>
                                             <th scope="col" class="px-6 py-3">Nº Compras</th>
+                                            <th scope="col" class="px-6 py-3">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="products-table"></tbody>
@@ -418,13 +419,47 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de Edición de Producto -->
+    <div id="edit-product-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Editar Producto</h3>
+                <p class="text-sm text-gray-600">Corrige los detalles del producto y la categorización.</p>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <input type="hidden" id="edit-product-id">
+                <input type="hidden" id="edit-product-original-name">
+                <div>
+                    <label for="edit-product-name" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                    <input type="text" id="edit-product-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="edit-category-principal" class="block text-sm font-medium text-gray-700">Categoría Principal</label>
+                    <select id="edit-category-principal" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+                <div>
+                    <label for="edit-category-familia" class="block text-sm font-medium text-gray-700">Familia</label>
+                    <select id="edit-category-familia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+                <div>
+                    <label for="edit-category-subfamilia" class="block text-sm font-medium text-gray-700">Subfamilia</label>
+                    <select id="edit-category-subfamilia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
+                <button id="edit-product-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                <button id="edit-product-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
 
     
     <script type="module">
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
         const firebaseConfig = {
@@ -461,7 +496,39 @@
         let unsubscribeProfile = () => {};
 
         // --- DEFINICIÓN DE CATEGORÍAS ---
-        const categorias = { /* ... (tu estructura de categorías completa aquí para referencia si es necesario) ... */ };
+        const categorias = {
+            "🛒 ALIMENTOS Y BEBIDAS": {
+                "🍓🥦 Frutas y Verduras": ["🥬 Verduras", "🥔 Tubérculos", "🍄 Setas y Hongos", "🍎 Frutas Frescas", "🍇 Frutas Deshidratadas"],
+                "🥩🍗 Carnes y Aves": ["🐔 Aves", "🐄 Ternera", "🐖 Cerdo", "🐑 Cordero", "🌭 Embutidos"],
+                "🐟🦐 Pescados y Mariscos": ["🐠 Pescado Fresco", "🦞 Marisco Fresco", "🧊 Pescado Congelado", "🥫 Conservas de Pescado"],
+                "🥛🥚 Lácteos y Huevos": ["🥛 Leche", "🍮 Yogures y Postres Lácteos", "🧀 Quesos", "🥚 Huevos"],
+                "🍞🥐 Panadería y Pastelería": ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"],
+                "🌾🫘 Cereales y Legumbres": ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"],
+                "🍾🍶 Aceites, Vinagres y Salsas": ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"],
+                "🥫🥡 Conservas y Platos Preparados": ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"],
+                "🧊 Congelados": ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"],
+                "🥤 Bebidas": ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"],
+                "🥨🍬 Snacks y Dulces": ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"],
+                "❤️‍🩹 Dietéticos y Especiales": ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
+            },
+            "🏠 HOGAR Y LIMPIEZA": {
+                "🧼🧽 Productos de Limpieza": ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"],
+                "🍴🍽️ Menaje y Utensilios": ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"],
+                "🏡 Cuidado del Hogar": ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
+            },
+            "🧴 HIGIENE Y CUIDADO PERSONAL": {
+                "🚿🧼 Higiene Diaria": ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"],
+                "💆‍♀️💅 Cuidado Facial y Corporal": ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"],
+                "⚕️💊 Farmacia/Parafarmacia": ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
+            },
+            "🐾 MASCOTAS": {
+                "🦴🍖 Alimento para Mascotas": ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"],
+                "🧸 Accesorios para Mascotas": ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
+            },
+            "💸 OTROS GASTOS": {
+                "🛍️ Varios": ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
+            }
+        };
         const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E57373', '#64B5F6', '#FFF176', '#4DB6AC', '#CE93D8', '#FFD54F'];
 
         // --- DOM ELEMENTS ---
@@ -554,13 +621,6 @@
             });
         }
 
-
-        function getAuthorizedIds() {
-            const ids = [currentUser.uid];
-            // En el futuro, si hay miembros del hogar, se podrían añadir sus IDs para gastos compartidos
-            return ids;
-        }
-
         // --- LÓGICA DE LA INTERFAZ (Tabs, Modals, etc.) ---
         
         function setupEventListeners() {
@@ -608,10 +668,16 @@
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
             
             // Mis Productos
-            // La lógica de edición se añadirá dinámicamente
-
-            // Mi Hogar
-            // Los listeners se añaden en renderHouseholdTab
+            document.getElementById('products-table').addEventListener('click', (e) => {
+                if (e.target.closest('.edit-product-btn')) {
+                    const button = e.target.closest('.edit-product-btn');
+                    openEditProductModal(button.dataset.id);
+                }
+            });
+            document.getElementById('edit-product-cancel-btn').addEventListener('click', () => hideModal('edit-product-modal'));
+            document.getElementById('edit-product-save-btn').addEventListener('click', saveProductChanges);
+            document.getElementById('edit-category-principal').addEventListener('change', populateFamiliaDropdown);
+            document.getElementById('edit-category-familia').addEventListener('change', populateSubfamiliaDropdown);
         }
 
         // --- RENDERIZADO DE COMPONENTES DE UI ---
@@ -1054,7 +1120,6 @@
             renderSupermarketChart();
             renderCategoryChart();
             renderPurchasesHistory();
-            renderProductsTable();
         }
         
         // --- HELPERS Y UTILIDADES ---
@@ -1230,7 +1295,7 @@
         function renderProductsTable() {
             const tbody = document.getElementById('products-table');
             if (allUserProducts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">Aún no has escaneado ningún producto.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Aún no has escaneado ningún producto.</td></tr>';
                 return;
             }
 
@@ -1251,9 +1316,109 @@
                         <td class="px-6 py-4">${p.familia}</td>
                         <td class="px-6 py-4">${p.subfamilia}</td>
                         <td class="px-6 py-4 text-center">${count}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button class="edit-product-btn text-indigo-600 hover:text-indigo-900" data-id="${p.id}">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </td>
                     </tr>
                 `}).join('');
         }
+
+        function openEditProductModal(productId) {
+            const product = allUserProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('edit-product-id').value = product.id;
+            document.getElementById('edit-product-original-name').value = product.nombre;
+            document.getElementById('edit-product-name').value = product.nombre;
+            
+            populatePrincipalDropdown(product.categoria_principal);
+            populateFamiliaDropdown(product.familia);
+            populateSubfamiliaDropdown(product.subfamilia);
+
+            showModal('edit-product-modal');
+        }
+
+        function populatePrincipalDropdown(selectedValue) {
+            const select = document.getElementById('edit-category-principal');
+            select.innerHTML = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`).join('');
+        }
+
+        function populateFamiliaDropdown(selectedValue) {
+            const principal = document.getElementById('edit-category-principal').value;
+            const select = document.getElementById('edit-category-familia');
+            if (categorias[principal]) {
+                select.innerHTML = Object.keys(categorias[principal]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join('');
+            } else {
+                select.innerHTML = '';
+            }
+            populateSubfamiliaDropdown();
+        }
+
+        function populateSubfamiliaDropdown(selectedValue) {
+            const principal = document.getElementById('edit-category-principal').value;
+            const familia = document.getElementById('edit-category-familia').value;
+            const select = document.getElementById('edit-category-subfamilia');
+            if (categorias[principal] && categorias[principal][familia]) {
+                select.innerHTML = categorias[principal][familia].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join('');
+            } else {
+                select.innerHTML = '';
+            }
+        }
+
+        async function saveProductChanges() {
+            const productId = document.getElementById('edit-product-id').value;
+            const originalName = document.getElementById('edit-product-original-name').value;
+            const newName = document.getElementById('edit-product-name').value;
+            const newCat = document.getElementById('edit-category-principal').value;
+            const newFam = document.getElementById('edit-category-familia').value;
+            const newSub = document.getElementById('edit-category-subfamilia').value;
+
+            hideModal('edit-product-modal');
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Actualizando producto y tickets...";
+
+            try {
+                const batch = writeBatch(db);
+                
+                // 1. Update the product document itself
+                const productRef = doc(db, "products", productId);
+                batch.update(productRef, {
+                    nombre: newName,
+                    categoria_principal: newCat,
+                    familia: newFam,
+                    subfamilia: newSub
+                });
+
+                // 2. Update all tickets containing this product
+                for (const ticket of allPurchases) {
+                    let ticketModified = false;
+                    const updatedProductos = ticket.productos.map(p => {
+                        if (p.nombre === originalName) {
+                            ticketModified = true;
+                            return { ...p, nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub };
+                        }
+                        return p;
+                    });
+
+                    if (ticketModified) {
+                        const ticketRef = doc(db, "tickets", ticket.id);
+                        batch.update(ticketRef, { productos: updatedProductos });
+                    }
+                }
+
+                await batch.commit();
+                showMessage("Éxito", "El producto y todas las compras asociadas han sido actualizados.");
+
+            } catch (error) {
+                console.error("Error updating product:", error);
+                showMessage("Error", `No se pudieron guardar los cambios. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
 
         function renderSupermarketChart() {
             const ctx = document.getElementById('supermarket-chart').getContext('2d');
