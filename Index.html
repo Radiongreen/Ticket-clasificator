@@ -1079,10 +1079,9 @@
             // Bug fix: Ensure dropdowns are populated even if AI returns no category
             document.querySelectorAll('.confirm-cat-principal').forEach((select, index) => {
                 const familiaSelectId = `confirm-cat-familia-${index}`;
-                const subfamiliaSelectId = `confirm-cat-subfamilia-${index}`;
                 if (!select.value || !categorias[select.value]) {
                     document.getElementById(familiaSelectId).innerHTML = '';
-                    document.getElementById(subfamiliaSelectId).innerHTML = '';
+                    populateSubfamiliaDropdown(null, `confirm-cat-subfamilia-${index}`, null, null);
                 } else if (!document.getElementById(familiaSelectId).value) {
                      populateFamiliaDropdown(null, familiaSelectId, select.value);
                 }
