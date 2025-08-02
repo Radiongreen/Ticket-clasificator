@@ -956,6 +956,11 @@
             processingOverlay.classList.remove('hidden');
             processingText.textContent = "Guardando compra...";
 
+            const sanitizeForDocId = (text) => {
+                if (!text || typeof text !== 'string') return 'producto_desconocido';
+                return text.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+            }
+
             // Asignar gastos
             if (userProfile.householdId) {
                 currentTicketData.productos.forEach((prod, index) => {
@@ -986,11 +991,13 @@
 
                 // Actualizar la colección de productos únicos
                 for (const product of currentTicketData.productos) {
-                    const productRef = doc(db, "products", `${currentUser.uid}_${product.nombre.toLowerCase().replace(/\s/g, '_')}`);
-                    // Usamos set con merge para crear o actualizar el producto
+                    const sanitizedProductName = sanitizeForDocId(product.nombre);
+                    const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
+                    const productRef = doc(db, "products", productDocId);
+                    
                     batch.set(productRef, {
                         userId: currentUser.uid,
-                        nombre: product.nombre,
+                        nombre: product.nombre, // Store the original name
                         categoria_principal: product.categoria_principal,
                         familia: product.familia,
                         subfamilia: product.subfamilia,
@@ -1004,7 +1011,7 @@
 
             } catch (error) {
                 console.error("Error saving ticket data:", error);
-                showMessage("Error", "No se pudo guardar la compra.");
+                showMessage("Error", `No se pudo guardar la compra. Detalles: ${error.message}`);
             } finally {
                 processingOverlay.classList.add('hidden');
             }
@@ -1219,7 +1226,7 @@
         }
 
         function renderSupermarketChart() {
-            const ctx = document.getElementById('supermarket-chart').getContext('d');
+            const ctx = document.getElementById('supermarket-chart').getContext('2d');
             const data = currentFilteredPurchases.reduce((acc, p) => {
                 acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
                 return acc;
