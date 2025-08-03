@@ -191,7 +191,10 @@
                         </div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <h3 class="text-lg font-semibold mb-4 text-center">Gasto por Supermercado</h3>
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 id="supermarket-chart-title" class="text-lg font-semibold">Gasto por Supermercado</h3>
+                                    <button id="supermarket-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
+                                </div>
                                 <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -206,9 +209,6 @@
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-lg font-semibold" id="history-title">Historial de Compras</h3>
                                 <div class="table-actions flex items-center gap-4">
-                                    <button id="reset-filter-btn" class="hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                        <i class="fas fa-times mr-2"></i>Quitar Filtro
-                                    </button>
                                     <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
                                         <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
                                     </button>
@@ -517,10 +517,14 @@
         let categoryChart = null;
         let currentTicketData = null; 
         let currentFile = null;
+        
+        // --- NEW: Independent chart filters and drilldown state ---
+        let supermarketFilter = null;
+        let categoryFilter = null;
         let categoryChartLevel = 1; 
         let selectedPrincipal = null;
         let selectedFamilia = null;
-        let chartFilter = { type: null, value: null };
+
         let unsubscribePurchases = () => {};
         let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
@@ -724,8 +728,10 @@
             document.getElementById('context-filter').addEventListener('change', renderDashboard);
             document.getElementById('select-all-checkbox').addEventListener('change', handleSelectAll);
             document.getElementById('delete-selected-btn').addEventListener('click', confirmDeleteSelected);
+            
+            // NEW: Chart back buttons
+            document.getElementById('supermarket-chart-back-btn').addEventListener('click', resetSupermarketFilter);
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
-            document.getElementById('reset-filter-btn').addEventListener('click', resetChartFilter);
             
             // Mis Productos
             document.getElementById('products-table').addEventListener('click', (e) => {
@@ -1238,27 +1244,14 @@
 
         function renderDashboard() {
             if (!currentUser) return;
+            
+            // 1. Get base filters
             const year = document.getElementById('filter-year').value;
             const month = document.getElementById('filter-month').value;
             const context = document.getElementById('context-filter').value;
 
-            let basePurchases = allPurchases;
-
-            // Apply chart filters if they exist
-            if (chartFilter.type && chartFilter.value) {
-                if (chartFilter.type === 'supermarket') {
-                    basePurchases = basePurchases.filter(p => p.supermercado === chartFilter.value);
-                } else if (chartFilter.type === 'category') {
-                    basePurchases = basePurchases.filter(p => p.productos.some(prod => prod.categoria_principal === chartFilter.value));
-                }
-                 document.getElementById('reset-filter-btn').classList.remove('hidden');
-                 document.getElementById('history-title').textContent = `Historial de: ${chartFilter.value}`;
-            } else {
-                document.getElementById('reset-filter-btn').classList.add('hidden');
-                document.getElementById('history-title').textContent = 'Historial de Compras';
-            }
-
-            currentFilteredPurchases = basePurchases.filter(p => {
+            // 2. Apply base filters to get a working set of purchases
+            let filteredPurchases = allPurchases.filter(p => {
                 const purchaseDate = new Date(p.fecha);
                 const yearMatch = year === 'all' || purchaseDate.getFullYear() == year;
                 const monthMatch = month === 'all' || (purchaseDate.getMonth() + 1) == month;
@@ -1267,19 +1260,40 @@
                 if (context === 'all') {
                     contextMatch = true;
                 } else if (context === 'personal') {
-                    contextMatch = p.userId === currentUser.uid && !p.householdId;
+                    // Includes tickets that are not part of any household
+                    contextMatch = !p.householdId;
                 } else if (context === 'household') {
                     contextMatch = p.householdId === userProfile.householdId;
                 }
 
                 return yearMatch && monthMatch && contextMatch;
             });
+
+            // 3. Create datasets for each component based on chart filters
+            const dataForCategoryChart = supermarketFilter
+                ? filteredPurchases.filter(p => p.supermercado === supermarketFilter)
+                : filteredPurchases;
+
+            const dataForSupermarketChart = categoryFilter
+                ? filteredPurchases.filter(p => p.productos.some(prod => prod.categoria_principal === categoryFilter))
+                : filteredPurchases;
             
-            // Renderizar componentes del dashboard
+            // 4. `currentFilteredPurchases` for summary and history is filtered by BOTH chart filters
+            let finalFiltered = filteredPurchases;
+            if (supermarketFilter) {
+                finalFiltered = finalFiltered.filter(p => p.supermercado === supermarketFilter);
+            }
+            if (categoryFilter) {
+                finalFiltered = finalFiltered.filter(p => p.productos.some(prod => prod.categoria_principal === categoryFilter));
+            }
+            currentFilteredPurchases = finalFiltered;
+            
+            // 5. Render all components with their specific data
             renderSummaryCards();
-            renderSupermarketChart();
-            renderCategoryChart();
+            renderSupermarketChart(dataForSupermarketChart);
+            renderCategoryChart(dataForCategoryChart);
             renderPurchasesHistory();
+            updateDashboardTitlesAndButtons();
         }
         
         // --- HELPERS Y UTILIDADES ---
@@ -1615,9 +1629,9 @@
         }
 
 
-        function renderSupermarketChart() {
+        function renderSupermarketChart(purchases) {
             const ctx = document.getElementById('supermarket-chart').getContext('2d');
-            const data = currentFilteredPurchases.reduce((acc, p) => {
+            const data = purchases.reduce((acc, p) => {
                 acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
                 return acc;
             }, {});
@@ -1635,11 +1649,13 @@
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    legend: { position: 'bottom' },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                    },
                     onClick: (evt, elements) => {
                         if (elements.length > 0) {
                             const clickedLabel = supermarketChart.data.labels[elements[0].index];
-                            chartFilter = { type: 'supermarket', value: clickedLabel };
+                            supermarketFilter = clickedLabel;
                             renderDashboard();
                         }
                     }
@@ -1647,11 +1663,11 @@
             });
         }
         
-        function renderCategoryChart() {
-             const ctx = document.getElementById('category-chart').getContext('2d');
+        function renderCategoryChart(purchases) {
+            const ctx = document.getElementById('category-chart').getContext('2d');
             const data = {};
 
-            currentFilteredPurchases.forEach(purchase => {
+            purchases.forEach(purchase => {
                 purchase.productos.forEach(product => {
                     let key;
                     if (categoryChartLevel === 1) {
@@ -1681,49 +1697,85 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    legend: { position: 'bottom' },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                    },
                     onClick: handleCategoryChartClick
                 }
             });
         }
         
-        function resetChartFilter() {
-            chartFilter = { type: null, value: null };
+        function resetSupermarketFilter() {
+            supermarketFilter = null;
             renderDashboard();
         }
 
         function handleCategoryChartClick(evt, elements) {
-            if (elements.length > 0) {
-                const clickedLabel = categoryChart.data.labels[elements[0].index];
-                if (categoryChartLevel === 1) {
-                    chartFilter = { type: 'category', value: clickedLabel };
-                    renderDashboard();
-                    
-                    selectedPrincipal = clickedLabel;
-                    categoryChartLevel = 2;
-                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
-                    document.getElementById('category-chart-back-btn').classList.remove('hidden');
-                    renderCategoryChart();
-                } else if (categoryChartLevel === 2) {
-                    selectedFamilia = clickedLabel;
-                    categoryChartLevel = 3;
-                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedFamilia}`;
-                    renderCategoryChart();
-                }
+            if (elements.length === 0) return;
+            const clickedLabel = categoryChart.data.labels[elements[0].index];
+
+            if (categoryChartLevel === 1) {
+                // Set the main filter for other components
+                categoryFilter = clickedLabel;
+                // Set the drilldown state for this chart
+                selectedPrincipal = clickedLabel;
+                categoryChartLevel = 2;
+            } else if (categoryChartLevel === 2) {
+                selectedFamilia = clickedLabel;
+                categoryChartLevel = 3;
             }
+            // A single call to renderDashboard will update everything correctly.
+            renderDashboard();
         }
 
         function handleCategoryChartBack() {
             if (categoryChartLevel === 3) {
                 categoryChartLevel = 2;
-                 document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
+                selectedFamilia = null;
             } else if (categoryChartLevel === 2) {
                 categoryChartLevel = 1;
-                document.getElementById('category-chart-title').textContent = 'Gasto por Categoría Principal';
-                document.getElementById('category-chart-back-btn').classList.add('hidden');
-                resetChartFilter();
+                selectedPrincipal = null;
+                // This is the point where we reset the filter for other components
+                categoryFilter = null;
             }
-            renderCategoryChart();
+            renderDashboard();
+        }
+
+        function updateDashboardTitlesAndButtons() {
+            // Supermarket Chart
+            const supermarketBackBtn = document.getElementById('supermarket-chart-back-btn');
+            if (supermarketFilter) {
+                supermarketBackBtn.classList.remove('hidden');
+            } else {
+                supermarketBackBtn.classList.add('hidden');
+            }
+
+            // Category Chart
+            const categoryBackBtn = document.getElementById('category-chart-back-btn');
+            const categoryTitle = document.getElementById('category-chart-title');
+            if (categoryChartLevel > 1) {
+                categoryBackBtn.classList.remove('hidden');
+                if (categoryChartLevel === 2) {
+                    categoryTitle.textContent = `Desglose de: ${selectedPrincipal}`;
+                } else if (categoryChartLevel === 3) {
+                    categoryTitle.textContent = `Desglose de: ${selectedFamilia}`;
+                }
+            } else {
+                categoryBackBtn.classList.add('hidden');
+                categoryTitle.textContent = 'Gasto por Categoría Principal';
+            }
+
+            // History Table Title
+            const historyTitle = document.getElementById('history-title');
+            const activeFilters = [];
+            if(supermarketFilter) activeFilters.push(`Supermercado: "${supermarketFilter}"`);
+            if(categoryFilter) activeFilters.push(`Categoría: "${categoryFilter}"`);
+
+            if (activeFilters.length > 0) {
+                historyTitle.textContent = `Historial (Filtros: ${activeFilters.join(' & ')})`;
+            } else {
+                historyTitle.textContent = 'Historial de Compras';
+            }
         }
         
         function handleSelectAll(e) {
