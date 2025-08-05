@@ -220,7 +220,7 @@
                 <!-- 1. Búsqueda de Imágenes Reales (Pexels) -->
                 <div class="mb-6">
                     <h4 class="font-semibold mb-2">Sugerencias de Imágenes Reales</h4>
-                    <p class="text-sm text-gray-500 mb-2">Selecciona la imagen que mejor represente tu producto.</p>
+                    <p id="image-search-term" class="text-sm text-gray-500 mb-2"></p>
                     <div id="pexels-loader" class="text-center hidden"><div class="loader mx-auto"></div></div>
                     <div id="image-options-container" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
                 </div>
@@ -949,6 +949,22 @@
         }
 
         // --- IMAGE SELECTION LOGIC (REVAMPED) ---
+        async function getCleanSearchQuery(productName) {
+            const prompt = `From the product name "${productName}", extract the 2-3 most important English keywords for an image search. Return only the keywords, separated by a space. For example, for "-/Albóndigas pollo", return "chicken meatballs".`;
+            try {
+                const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
+                const apiKey = firebaseConfig.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                if (!response.ok) return productName; // Fallback to original name
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text.trim();
+            } catch (error) {
+                console.error("Error cleaning search query:", error);
+                return productName; // Fallback to original name on error
+            }
+        }
+
         async function openImageSelectionModal(context, identifier) {
             activeImageSelection = { context, identifier, imageUrl: null };
             let productName;
@@ -964,7 +980,10 @@
             document.getElementById('upload-image-input').value = '';
             document.getElementById('ai-image-container').innerHTML = '';
             showModal('image-selection-modal');
-            await searchPexelsImages(productName);
+            
+            const cleanQuery = await getCleanSearchQuery(productName);
+            document.getElementById('image-search-term').textContent = `Buscando imágenes para: "${cleanQuery}"`;
+            await searchPexelsImages(cleanQuery);
         }
         
         async function searchPexelsImages(query) {
