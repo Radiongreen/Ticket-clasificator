@@ -740,6 +740,67 @@
             });
         }
         
+        function renderHouseholdTab(profile) {
+            const container = document.getElementById('household-management');
+            const membersList = document.getElementById('household-members-list');
+            membersList.innerHTML = ''; 
+
+            if (profile && profile.householdId) {
+                container.innerHTML = `
+                    <p class="text-gray-600 mb-2">Perteneces al hogar con ID:</p>
+                    <p class="font-mono bg-gray-100 p-2 rounded break-all mb-4">${profile.householdId}</p>
+                    <button id="leave-household-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Abandonar Hogar</button>
+                `;
+                document.getElementById('leave-household-btn').addEventListener('click', leaveHousehold);
+                loadHouseholdMembers(profile.householdId);
+            } else {
+                container.innerHTML = `
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-2">Crear un nuevo hogar</h3>
+                        <p class="text-sm text-gray-600 mb-2">Crea un espacio compartido para gestionar los gastos familiares.</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="household-name-input" placeholder="Nombre del hogar (Ej: Familia Pérez)" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5">
+                            <button id="create-household-btn" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700">Crear</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Unirse a un hogar existente</h3>
+                        <p class="text-sm text-gray-600 mb-2">Si un familiar ya ha creado un hogar, introduce su ID aquí.</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="join-household-id-input" placeholder="ID del hogar" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5">
+                            <button id="join-household-btn" class="bg-green-500 text-white px-4 rounded-lg hover:bg-green-600">Unirse</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('create-household-btn').addEventListener('click', createHousehold);
+                document.getElementById('join-household-btn').addEventListener('click', joinHousehold);
+                membersList.innerHTML = '<li class="text-gray-500">No perteneces a ningún hogar.</li>';
+            }
+        }
+
+        async function loadHouseholdMembers(householdId) {
+            const membersList = document.getElementById('household-members-list');
+            membersList.innerHTML = '<li>Cargando miembros...</li>';
+            const householdRef = doc(db, "households", householdId);
+            const householdDoc = await getDoc(householdRef);
+
+            if (householdDoc.exists()) {
+                const membersData = householdDoc.data().members;
+                if (membersData && Object.keys(membersData).length > 0) {
+                    membersList.innerHTML = Object.values(membersData).map(member => `
+                        <li class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg">
+                            <img src="${member.photoURL}" alt="${member.displayName}" class="w-8 h-8 rounded-full">
+                            <span class="font-medium">${member.displayName}</span>
+                        </li>
+                    `).join('');
+                } else {
+                     membersList.innerHTML = '<li class="text-gray-500">No hay miembros en este hogar.</li>';
+                }
+            } else {
+                membersList.innerHTML = '<li class="text-red-500">Error: No se encontró el hogar.</li>';
+            }
+        }
+
         // --- DASHBOARD LOGIC ---
         function renderDashboard() {
             if (!currentUser) return;
@@ -999,47 +1060,448 @@
             document.querySelectorAll('.purchase-checkbox').forEach(cb => cb.addEventListener('change', handlePurchaseSelect));
         }
 
-        // --- OTHER FUNCTIONS (UNCHANGED) ---
-        // Includes: handleSelectAll, updateDeleteButtonState, confirmDeleteSelected, handleAuthError, resetAppState, etc.
-        // ... (The rest of the JS code remains largely the same, so it's omitted for brevity but included in the final file)
-        // Note: The following are placeholders for the rest of the functions that were in the previous version
+        // --- TICKET PROCESSING & SAVING ---
         function handleFileSelect(e) { const file = e.target.files[0]; if (file) previewFile(file); }
         function handleFileDrop(e) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('bg-indigo-50'); const file = e.dataTransfer.files[0]; if (file) previewFile(file); }
         function previewFile(file) { currentFile = file; const reader = new FileReader(); reader.onload = (e) => { document.getElementById('image-preview-container').innerHTML = `<img src="${e.target.result}" class="max-h-full max-w-full object-contain">`; }; reader.readAsDataURL(file); document.getElementById('process-ticket-btn').disabled = false; }
-        async function processTicket() { /* ... same as before ... */ }
-        function buildAIPrompt() { /* ... same as before ... */ return `...`;}
+        
+        async function processTicket() {
+            if (!currentFile) {
+                showMessage("Error", "Por favor, selecciona una imagen primero.");
+                return;
+            }
+            
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Analizando con IA...";
+
+            try {
+                const base64Image = await fileToBase64(currentFile);
+                const prompt = buildAIPrompt();
+                
+                const requestBody = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inline_data: { mime_type: currentFile.type, data: base64Image } }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                    }
+                };
+
+                const apiKey = firebaseConfig.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(`Error de la API: ${errorBody.error.message}`);
+                }
+
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text;
+                currentTicketData = JSON.parse(jsonText);
+                
+                showConfirmationModal(currentTicketData);
+
+            } catch (error) {
+                console.error("Error processing ticket:", error);
+                showMessage("Error de IA", `No se pudo procesar el ticket. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
+        function buildAIPrompt() {
+            return `
+                Analiza la imagen de este ticket de supermercado. Extrae la siguiente información en un formato JSON estricto. No incluyas nada fuera del objeto JSON.
+                
+                El JSON debe tener la siguiente estructura:
+                {
+                  "supermercado": "string", "direccion_supermercado": "string", "fecha": "string",
+                  "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ],
+                  "total": number
+                }
+
+                Reglas de categorización (MUY IMPORTANTE):
+                - Asigna a cada producto una categoría de los 3 niveles: categoria_principal, familia y subfamilia.
+                - Utiliza ÚNICA Y EXCLUSIVAMENTE las siguientes categorías. No inventes ninguna.
+                - Si un producto no encaja, usa 'OTROS GASTOS' -> 'Varios' -> 'Sin especificar'.
+
+                Jerarquía de Categorías Permitidas:
+                - 🛒 ALIMENTOS Y BEBIDAS:
+                  - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas]
+                  - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
+                  - ... (resto de categorías)
+                - 🏠 HOGAR Y LIMPIEZA: ...
+                - 🧴 HIGIENE Y CUIDADO PERSONAL: ...
+                - 🐾 MASCOTAS: ...
+                - 💸 OTROS GASTOS: ...
+
+                Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.
+            `;
+        }
+
         function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = error => reject(error); }); }
-        function showConfirmationModal(data) { /* ... same as before ... */ }
-        function updateConfirmationTotal() { /* ... same as before ... */ }
-        function updateTicketDataFromModal() { /* ... same as before ... */ }
-        function showAssignExpenseModal() { /* ... same as before ... */ }
-        async function saveTicketData() { /* ... same as before ... */ }
-        function renderProductsTable() { /* ... same as before ... */ }
-        function openEditProductModal(productId) { /* ... same as before ... */ }
-        function populatePrincipalDropdown(selectId, selectedValue) { /* ... same as before ... */ }
-        function populateFamiliaDropdown(selectedValue, selectId, principalValue) { /* ... same as before ... */ }
-        function populateSubfamiliaDropdown(selectedValue, selectId, principalValue, familiaValue) { /* ... same as before ... */ }
-        async function saveProductChanges() { /* ... same as before ... */ }
-        function handleSelectAll(e) { const isChecked = e.target.checked; document.querySelectorAll('.purchase-checkbox').forEach(cb => { cb.checked = isChecked; const id = cb.dataset.id; if (isChecked) { selectedPurchases.add(id); } else { selectedPurchases.delete(id); } }); updateDeleteButtonState(); }
-        function handlePurchaseSelect(e) { const id = e.target.dataset.id; if (e.target.checked) { selectedPurchases.add(id); } else { selectedPurchases.delete(id); } updateDeleteButtonState(); }
+        
+        function showConfirmationModal(data) {
+            const content = document.getElementById('confirmation-content');
+            const productRows = data.productos.map((p, index) => {
+                if (!categorias[p.categoria_principal]) { p.categoria_principal = Object.keys(categorias)[0]; p.familia = null; p.subfamilia = null; }
+                if (!p.familia || !categorias[p.categoria_principal][p.familia]) { p.familia = Object.keys(categorias[p.categoria_principal])[0]; p.subfamilia = null; }
+                const subfamilias = categorias[p.categoria_principal][p.familia] || [];
+                if (!p.subfamilia || !subfamilias.includes(p.subfamilia)) { p.subfamilia = subfamilias[0] || null; }
+
+                const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
+                const familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
+                const subfamiliaOptions = subfamilias.map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
+
+                return `
+                <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
+                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly></div>
+                    <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
+                    <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-familia" id="confirm-cat-familia-${index}" data-index="${index}">${familiaOptions}</select></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
+                    <div class="col-span-1 text-center"><button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button></div>
+                </div>`;
+            }).join('');
+
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-sm font-medium text-gray-700">Supermercado</label><input type="text" id="confirm-supermarket-name" value="${data.supermercado}" class="confirm-input mt-1"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">Dirección</label><input type="text" id="confirm-supermarket-address" value="${data.direccion_supermercado || ''}" class="confirm-input mt-1"></div>
+                </div>
+                <div class="space-y-2">
+                    <div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2">
+                        <div class="col-span-3">Nombre</div><div class="col-span-1">Cant.</div><div class="col-span-1">Precio</div><div class="col-span-2">Categoría</div><div class="col-span-2">Familia</div><div class="col-span-2">Subfamilia</div><div class="col-span-1"></div>
+                    </div>
+                    ${productRows}
+                </div>`;
+            updateConfirmationTotal();
+            showModal('confirmation-modal');
+        }
+        
+        function updateConfirmationTotal() { let total = 0; document.querySelectorAll('.confirm-price-input').forEach(input => { if(input.closest('.product-row')) total += parseFloat(input.value) || 0; }); document.getElementById('confirmation-total').textContent = total.toFixed(2); }
+        
+        function updateTicketDataFromModal() {
+            const newProductos = [];
+            document.querySelectorAll('.product-row').forEach(row => {
+                newProductos.push({
+                    nombre: row.querySelector('.confirm-name-input').value,
+                    cantidad: parseInt(row.querySelector('.confirm-qty-input').value, 10),
+                    precio: parseFloat(row.querySelector('.confirm-price-input').value),
+                    categoria_principal: row.querySelector('.confirm-cat-principal').value,
+                    familia: row.querySelector('.confirm-cat-familia').value,
+                    subfamilia: row.querySelector('.confirm-cat-subfamilia').value,
+                });
+            });
+            currentTicketData.productos = newProductos;
+            currentTicketData.total = newProductos.reduce((sum, p) => sum + p.precio, 0);
+            currentTicketData.supermercado = document.getElementById('confirm-supermarket-name').value;
+            currentTicketData.direccion_supermercado = document.getElementById('confirm-supermarket-address').value;
+        }
+
+        function showAssignExpenseModal() {
+            hideModal('confirmation-modal');
+            const container = document.getElementById('assign-expense-content');
+            if (!userProfile.householdId) { saveTicketData(); return; }
+            container.innerHTML = `<p class="mb-4 text-sm">Selecciona para cada producto si es un gasto 'Personal' o para el 'Hogar'.</p>
+                <div class="space-y-3">${currentTicketData.productos.map((p, index) => `<div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><span class="truncate pr-4">${p.nombre}</span><div class="flex-shrink-0"><input type="radio" id="personal-${index}" name="assign-${index}" value="personal" class="form-radio text-indigo-600" checked><label for="personal-${index}" class="ml-1 mr-3">Personal</label><input type="radio" id="hogar-${index}" name="assign-${index}" value="hogar" class="form-radio text-green-600"><label for="hogar-${index}" class="ml-1">Hogar</label></div></div>`).join('')}</div>`;
+            showModal('assign-expense-modal');
+        }
+
+        async function saveTicketData() {
+            hideModal('assign-expense-modal');
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Guardando compra...";
+
+            const sanitizeForDocId = (text) => text ? text.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '') : 'producto_desconocido';
+
+            if (userProfile.householdId) {
+                currentTicketData.productos.forEach((prod, index) => { prod.assignedTo = document.querySelector(`input[name="assign-${index}"]:checked`).value === 'hogar' ? userProfile.householdId : 'personal'; });
+            } else {
+                currentTicketData.productos.forEach(prod => prod.assignedTo = 'personal');
+            }
+            const ticketHouseholdId = currentTicketData.productos.some(p => p.assignedTo !== 'personal') ? userProfile.householdId : null;
+
+            try {
+                const batch = writeBatch(db);
+                const ticketRef = doc(collection(db, "tickets"));
+                batch.set(ticketRef, { userId: currentUser.uid, householdId: ticketHouseholdId, ...currentTicketData, createdAt: serverTimestamp() });
+
+                for (const product of currentTicketData.productos) {
+                    const productDocId = `${currentUser.uid}_${sanitizeForDocId(product.nombre)}`;
+                    const productRef = doc(db, "products", productDocId);
+                    batch.set(productRef, { userId: currentUser.uid, nombre: product.nombre, categoria_principal: product.categoria_principal, familia: product.familia, subfamilia: product.subfamilia, lastUpdate: serverTimestamp() }, { merge: true });
+                }
+                await batch.commit();
+                showMessage("Éxito", "La compra se ha guardado correctamente.");
+                resetTicketAnalysis();
+            } catch (error) {
+                console.error("Error saving ticket data:", error);
+                showMessage("Error", `No se pudo guardar la compra. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
+        // --- PRODUCT MANAGEMENT ---
+        function renderProductsTable() {
+            const tbody = document.getElementById('products-table');
+            if (allUserProducts.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Aún no has escaneado ningún producto.</td></tr>'; return; }
+            const productCounts = allPurchases.flatMap(p => p.productos).reduce((acc, prod) => { acc[prod.nombre.toLowerCase()] = (acc[prod.nombre.toLowerCase()] || 0) + 1; return acc; }, {});
+            tbody.innerHTML = allUserProducts.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
+                    <td class="px-6 py-4">${p.categoria_principal}</td>
+                    <td class="px-6 py-4">${p.familia}</td>
+                    <td class="px-6 py-4">${p.subfamilia}</td>
+                    <td class="px-6 py-4 text-center">${productCounts[p.nombre.toLowerCase()] || 0}</td>
+                    <td class="px-6 py-4 text-center"><button class="edit-product-btn text-indigo-600 hover:text-indigo-900" data-id="${p.id}"><i class="fas fa-pencil-alt"></i></button></td>
+                </tr>`).join('');
+        }
+
+        function openEditProductModal(productId) {
+            const product = allUserProducts.find(p => p.id === productId);
+            if (!product) return;
+            document.getElementById('edit-product-id').value = product.id;
+            document.getElementById('edit-product-original-name').value = product.nombre;
+            document.getElementById('edit-product-name').value = product.nombre;
+            populatePrincipalDropdown('edit-category-principal', product.categoria_principal);
+            populateFamiliaDropdown(product.familia, 'edit-category-familia', product.categoria_principal);
+            populateSubfamiliaDropdown(product.subfamilia, 'edit-category-subfamilia', product.categoria_principal, product.familia);
+            showModal('edit-product-modal');
+        }
+
+        function populatePrincipalDropdown(selectId, selectedValue) { const select = document.getElementById(selectId); select.innerHTML = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`).join(''); }
+        function populateFamiliaDropdown(selectedValue, selectId, principalValue) { const select = document.getElementById(selectId); if (categorias[principalValue]) { select.innerHTML = Object.keys(categorias[principalValue]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join(''); } else { select.innerHTML = ''; } populateSubfamiliaDropdown(null, selectId.replace('familia', 'subfamilia'), principalValue, select.value); }
+        function populateSubfamiliaDropdown(selectedValue, selectId, principalValue, familiaValue) { const select = document.getElementById(selectId); if (categorias[principalValue] && categorias[principalValue][familiaValue]) { select.innerHTML = categorias[principalValue][familiaValue].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join(''); } else { select.innerHTML = ''; } }
+
+        async function saveProductChanges() {
+            const productId = document.getElementById('edit-product-id').value;
+            const originalName = document.getElementById('edit-product-original-name').value;
+            const newName = document.getElementById('edit-product-name').value;
+            const newCat = document.getElementById('edit-category-principal').value;
+            const newFam = document.getElementById('edit-category-familia').value;
+            const newSub = document.getElementById('edit-category-subfamilia').value;
+
+            hideModal('edit-product-modal');
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Actualizando producto y tickets...";
+
+            try {
+                const batch = writeBatch(db);
+                const productRef = doc(db, "products", productId);
+                batch.update(productRef, { nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub });
+
+                for (const ticket of allPurchases) {
+                    let ticketModified = false;
+                    const updatedProductos = ticket.productos.map(p => {
+                        if (p.nombre === originalName) {
+                            ticketModified = true;
+                            return { ...p, nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub };
+                        }
+                        return p;
+                    });
+                    if (ticketModified) {
+                        const ticketRef = doc(db, "tickets", ticket.id);
+                        batch.update(ticketRef, { productos: updatedProductos });
+                    }
+                }
+                await batch.commit();
+                showMessage("Éxito", "El producto y todas las compras asociadas han sido actualizados.");
+            } catch (error) {
+                console.error("Error updating product:", error);
+                showMessage("Error", `No se pudieron guardar los cambios. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+        
+        // --- HELPERS & UTILITIES ---
+        function handleSelectAll(e) { const isChecked = e.target.checked; document.querySelectorAll('.purchase-checkbox').forEach(cb => { cb.checked = isChecked; const id = cb.dataset.id; if (isChecked) selectedPurchases.add(id); else selectedPurchases.delete(id); }); updateDeleteButtonState(); }
+        function handlePurchaseSelect(e) { const id = e.target.dataset.id; if (e.target.checked) selectedPurchases.add(id); else selectedPurchases.delete(id); updateDeleteButtonState(); }
         function updateDeleteButtonState() { document.getElementById('delete-selected-btn').disabled = selectedPurchases.size === 0; }
-        function confirmDeleteSelected() { /* ... same as before ... */ }
-        function handleAuthError(error) { if (error.code === 'auth/unauthorized-domain') { showMessage( "Error de Configuración", "El dominio actual no está autorizado..." ); } else { console.error("Error de autenticación:", error); showMessage("Error de Autenticación", `No se pudo iniciar sesión. Error: ${error.message}`); } }
+        
+        function confirmDeleteSelected() {
+            const modal = document.getElementById('delete-confirm-modal');
+            document.getElementById('delete-modal-title').textContent = 'Eliminar Compras';
+            document.getElementById('delete-modal-message').textContent = `¿Estás seguro de que quieres eliminar ${selectedPurchases.size} compra(s)? Esta acción no se puede deshacer.`;
+            showModal('delete-confirm-modal');
+
+            document.getElementById('delete-cancel-btn').onclick = () => hideModal('delete-confirm-modal');
+            document.getElementById('delete-confirm-btn').onclick = async () => {
+                hideModal('delete-confirm-modal');
+                processingOverlay.classList.remove('hidden');
+                processingText.textContent = 'Eliminando...';
+                try {
+                    const batch = writeBatch(db);
+                    selectedPurchases.forEach(id => batch.delete(doc(db, 'tickets', id)));
+                    await batch.commit();
+                    showMessage('Éxito', 'Las compras seleccionadas han sido eliminadas.');
+                    selectedPurchases.clear();
+                    updateDeleteButtonState();
+                } catch (error) {
+                    console.error("Error deleting purchases:", error);
+                    showMessage('Error', 'No se pudieron eliminar las compras.');
+                } finally {
+                    processingOverlay.classList.add('hidden');
+                }
+            };
+        }
+
+        function handleAuthError(error) {
+            if (error.code === 'auth/unauthorized-domain') {
+                showMessage("Error de Configuración", "El dominio actual no está autorizado para la autenticación de Firebase. Por favor, añádelo en la configuración de tu proyecto de Firebase.");
+            } else {
+                console.error("Error de autenticación:", error);
+                showMessage("Error de Autenticación", `No se pudo iniciar sesión. Error: ${error.message}`);
+            }
+        }
+        
         window.addEventListener('click', (e) => { const userMenu = document.getElementById('user-menu'); if (userMenu && !userMenu.classList.contains('hidden') && !authContainer.contains(e.target)) { userMenu.classList.add('hidden'); } });
         function showMessage(title, message) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; showModal('message-modal'); }
         function showModal(id) { const modal = document.getElementById(id); modal.classList.remove('hidden'); setTimeout(() => modal.classList.remove('opacity-0'), 10); }
         function hideModal(id) { const modal = document.getElementById(id); modal.classList.add('opacity-0'); setTimeout(() => modal.classList.add('hidden'), 300); }
         function showWelcomeModal() { showModal('welcome-modal'); }
-        function resetAppState() { /* ... same as before ... */ }
-        function resetTicketAnalysis() { /* ... same as before ... */ }
-        function populateFilters() { /* ... same as before ... */ }
-        function updateContextFilter(profile) { /* ... same as before ... */ }
-        function renderSummaryCards() { /* ... same as before ... */ }
-        function renderHouseholdTab(profile) { /* ... same as before ... */ }
-        async function loadHouseholdMembers(householdId) { /* ... same as before ... */ }
-        async function createHousehold() { /* ... same as before ... */ }
-        async function joinHousehold() { /* ... same as before ... */ }
-        async function leaveHousehold() { /* ... same as before ... */ }
+        
+        function resetAppState() {
+            allPurchases = []; allUserProducts = []; currentFilteredPurchases = []; selectedPurchases.clear();
+            if (supermarketChart) supermarketChart.destroy();
+            if (categoryChart) categoryChart.destroy();
+            resetTicketAnalysis();
+            document.getElementById('purchases-history').innerHTML = '';
+            document.getElementById('products-table').innerHTML = '';
+        }
+
+        function resetTicketAnalysis() {
+            currentFile = null; currentTicketData = null;
+            document.getElementById('file-upload').value = '';
+            document.getElementById('image-preview-container').innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>';
+            document.getElementById('process-ticket-btn').disabled = true;
+        }
+
+        function populateFilters() {
+            const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a, b) => b - a);
+            const yearSelect = document.getElementById('filter-year');
+            yearSelect.innerHTML = '<option value="all">Todos los Años</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            
+            const monthSelect = document.getElementById('filter-month');
+            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            monthSelect.innerHTML = '<option value="all">Todos los Meses</option>' + months.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
+        }
+
+        function updateContextFilter(profile) {
+            const contextSelect = document.getElementById('context-filter');
+            let options = '<option value="personal">Gastos Personales</option>';
+            if (profile && profile.householdId) { options += `<option value="household">Gastos del Hogar</option>`; }
+            options += '<option value="all">Ver Todo</option>';
+            contextSelect.innerHTML = options;
+        }
+
+        function renderSummaryCards() {
+            const totalExpense = currentFilteredPurchases.reduce((sum, p) => sum + p.total, 0);
+            document.getElementById('total-expense').textContent = `${totalExpense.toFixed(2)} €`;
+            document.getElementById('total-purchases').textContent = currentFilteredPurchases.length;
+            
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            const comparisonDiv = document.getElementById('monthly-comparison');
+
+            if (year !== 'all' && month !== 'all') {
+                const currentMonth = parseInt(month), currentYear = parseInt(year);
+                let prevMonth = currentMonth - 1, prevYear = currentYear;
+                if (prevMonth === 0) { prevMonth = 12; prevYear--; }
+
+                const prevMonthTotal = allPurchases.filter(p => { const d = new Date(p.fecha); return d.getFullYear() === prevYear && (d.getMonth() + 1) === prevMonth; }).reduce((sum, p) => sum + p.total, 0);
+
+                if (prevMonthTotal > 0) {
+                    const percentageChange = ((totalExpense - prevMonthTotal) / prevMonthTotal) * 100;
+                    const color = percentageChange > 0 ? 'text-red-500' : 'text-green-500';
+                    const icon = percentageChange > 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+                    comparisonDiv.innerHTML = `<span class="${color}">${icon} ${percentageChange.toFixed(1)}%</span>`;
+                } else { comparisonDiv.innerHTML = totalExpense > 0 ? `<span class="text-green-500">--</span>` : 'N/A'; }
+            } else {
+                comparisonDiv.textContent = '--';
+            }
+        }
+        
+        async function createHousehold() {
+            const nameInput = document.getElementById('household-name-input');
+            const householdName = nameInput.value.trim();
+            if (!householdName) return showMessage("Error", "Por favor, introduce un nombre para el hogar.");
+            
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Creando hogar...";
+            try {
+                const batch = writeBatch(db);
+                const householdRef = doc(collection(db, "households"));
+                batch.set(householdRef, { name: householdName, ownerId: currentUser.uid, createdAt: serverTimestamp(), members: { [currentUser.uid]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } } });
+                const userRef = doc(db, "users", currentUser.uid);
+                batch.update(userRef, { householdId: householdRef.id });
+                await batch.commit();
+                showMessage("Éxito", `Hogar "${householdName}" creado correctamente.`);
+            } catch (error) {
+                console.error("Error creating household: ", error);
+                showMessage("Error", "No se pudo crear el hogar.");
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
+        async function joinHousehold() {
+            const idInput = document.getElementById('join-household-id-input');
+            const householdId = idInput.value.trim();
+            if (!householdId) return showMessage("Error", "Por favor, introduce un ID de hogar válido.");
+
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Uniéndote al hogar...";
+            try {
+                const householdRef = doc(db, "households", householdId);
+                const householdDoc = await getDoc(householdRef);
+                if (!householdDoc.exists()) throw new Error("El hogar no existe.");
+
+                const batch = writeBatch(db);
+                const userRef = doc(db, "users", currentUser.uid);
+                batch.update(householdRef, { [`members.${currentUser.uid}`]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } });
+                batch.update(userRef, { householdId: householdId });
+                await batch.commit();
+                showMessage("Éxito", "Te has unido al hogar correctamente.");
+            } catch (error) {
+                console.error("Error joining household: ", error);
+                showMessage("Error", `No se pudo unir al hogar. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+        
+        async function leaveHousehold() {
+             if (!userProfile || !userProfile.householdId) return;
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Abandonando el hogar...";
+            try {
+                const batch = writeBatch(db);
+                const householdRef = doc(db, "households", userProfile.householdId);
+                const userRef = doc(db, "users", currentUser.uid);
+                batch.update(householdRef, { [`members.${currentUser.uid}`]: deleteField() });
+                batch.update(userRef, { householdId: null });
+                await batch.commit();
+                showMessage("Éxito", "Has abandonado el hogar.");
+            } catch (error) {
+                console.error("Error leaving household:", error);
+                showMessage("Error", "No se pudo abandonar el hogar.");
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
 
     </script>
 </body>
