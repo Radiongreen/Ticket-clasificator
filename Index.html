@@ -52,6 +52,13 @@
             width: 100%;
             background-color: white;
         }
+        .product-image-placeholder {
+            width: 48px;
+            height: 48px;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+        }
+        #edit-image-preview .loader { width: 30px; height: 30px; border-width: 4px; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -240,15 +247,15 @@
                     <div id="mis-productos" class="tab-content">
                          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <h2 class="text-xl font-semibold mb-4">Gestión de Productos</h2>
-                            <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado y corregir su categorización si es necesario. Los cambios se aplicarán a todas las compras pasadas.</p>
+                            <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado, añadirles una imagen y corregir su categorización si es necesario.</p>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-sm text-left text-gray-500">
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                         <tr>
+                                            <th scope="col" class="px-6 py-3">Imagen</th>
                                             <th scope="col" class="px-6 py-3">Producto</th>
                                             <th scope="col" class="px-6 py-3">Categoría Principal</th>
                                             <th scope="col" class="px-6 py-3">Familia</th>
-                                            <th scope="col" class="px-6 py-3">Subfamilia</th>
                                             <th scope="col" class="px-6 py-3">Nº Compras</th>
                                             <th scope="col" class="px-6 py-3">Acciones</th>
                                         </tr>
@@ -451,29 +458,40 @@
     
     <!-- Modal de Edición de Producto -->
     <div id="edit-product-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto max-h-[90vh] flex flex-col">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-bold text-gray-900">Editar Producto</h3>
                 <p class="text-sm text-gray-600">Corrige los detalles del producto y la categorización.</p>
             </div>
-            <div class="p-6 overflow-y-auto space-y-4">
-                <input type="hidden" id="edit-product-id">
-                <input type="hidden" id="edit-product-original-name">
-                <div>
-                    <label for="edit-product-name" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
-                    <input type="text" id="edit-product-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1 flex flex-col items-center">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Imagen del Producto</h4>
+                    <div id="edit-image-preview" class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+                        <!-- La imagen o el loader se insertarán aquí -->
+                    </div>
+                    <button id="generate-image-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
+                        <i class="fas fa-magic mr-2"></i>Generar Imagen
+                    </button>
                 </div>
-                <div>
-                    <label for="edit-category-principal" class="block text-sm font-medium text-gray-700">Categoría Principal</label>
-                    <select id="edit-category-principal" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
-                </div>
-                <div>
-                    <label for="edit-category-familia" class="block text-sm font-medium text-gray-700">Familia</label>
-                    <select id="edit-category-familia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
-                </div>
-                <div>
-                    <label for="edit-category-subfamilia" class="block text-sm font-medium text-gray-700">Subfamilia</label>
-                    <select id="edit-category-subfamilia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                <div class="md:col-span-2 space-y-4">
+                    <input type="hidden" id="edit-product-id">
+                    <input type="hidden" id="edit-product-original-name">
+                    <div>
+                        <label for="edit-product-name" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
+                        <input type="text" id="edit-product-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="edit-category-principal" class="block text-sm font-medium text-gray-700">Categoría Principal</label>
+                        <select id="edit-category-principal" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                    </div>
+                    <div>
+                        <label for="edit-category-familia" class="block text-sm font-medium text-gray-700">Familia</label>
+                        <select id="edit-category-familia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                    </div>
+                    <div>
+                        <label for="edit-category-subfamilia" class="block text-sm font-medium text-gray-700">Subfamilia</label>
+                        <select id="edit-category-subfamilia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
+                    </div>
                 </div>
             </div>
             <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
@@ -517,14 +535,10 @@
         let categoryChart = null;
         let currentTicketData = null; 
         let currentFile = null;
-        
-        // --- NEW: Independent chart filters and drilldown state ---
-        let supermarketFilter = null;
-        let categoryFilter = null;
         let categoryChartLevel = 1; 
         let selectedPrincipal = null;
         let selectedFamilia = null;
-
+        let chartFilter = { type: null, value: null };
         let unsubscribePurchases = () => {};
         let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
@@ -728,9 +742,6 @@
             document.getElementById('context-filter').addEventListener('change', renderDashboard);
             document.getElementById('select-all-checkbox').addEventListener('change', handleSelectAll);
             document.getElementById('delete-selected-btn').addEventListener('click', confirmDeleteSelected);
-            
-            // NEW: Chart back buttons
-            document.getElementById('supermarket-chart-back-btn').addEventListener('click', handleSupermarketChartBack);
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
             
             // Mis Productos
@@ -744,6 +755,7 @@
             document.getElementById('edit-product-save-btn').addEventListener('click', saveProductChanges);
             document.getElementById('edit-category-principal').addEventListener('change', () => populateFamiliaDropdown(null, 'edit-category-familia', document.getElementById('edit-category-principal').value));
             document.getElementById('edit-category-familia').addEventListener('change', () => populateSubfamiliaDropdown(null, 'edit-category-subfamilia', document.getElementById('edit-category-principal').value, document.getElementById('edit-category-familia').value));
+            document.getElementById('generate-image-btn').addEventListener('click', generateProductImage);
         }
 
         // --- RENDERIZADO DE COMPONENTES DE UI ---
@@ -1244,14 +1256,11 @@
 
         function renderDashboard() {
             if (!currentUser) return;
-            
-            // 1. Get base filters
             const year = document.getElementById('filter-year').value;
             const month = document.getElementById('filter-month').value;
             const context = document.getElementById('context-filter').value;
 
-            // 2. Apply base filters to get a working set of purchases
-            let filteredPurchases = allPurchases.filter(p => {
+            let basePurchases = allPurchases.filter(p => {
                 const purchaseDate = new Date(p.fecha);
                 const yearMatch = year === 'all' || purchaseDate.getFullYear() == year;
                 const monthMatch = month === 'all' || (purchaseDate.getMonth() + 1) == month;
@@ -1260,40 +1269,25 @@
                 if (context === 'all') {
                     contextMatch = true;
                 } else if (context === 'personal') {
-                    // Includes tickets that are not part of any household
-                    contextMatch = !p.householdId;
+                    contextMatch = p.userId === currentUser.uid && !p.householdId;
                 } else if (context === 'household') {
                     contextMatch = p.householdId === userProfile.householdId;
                 }
 
                 return yearMatch && monthMatch && contextMatch;
             });
-
-            // 3. Create datasets for each component based on chart filters
-            const dataForCategoryChart = supermarketFilter
-                ? filteredPurchases.filter(p => p.supermercado === supermarketFilter)
-                : filteredPurchases;
-
-            const dataForSupermarketChart = categoryFilter
-                ? filteredPurchases.filter(p => p.productos.some(prod => prod.categoria_principal === categoryFilter))
-                : filteredPurchases;
             
-            // 4. `currentFilteredPurchases` for summary and history is filtered by BOTH chart filters
-            let finalFiltered = filteredPurchases;
-            if (supermarketFilter) {
-                finalFiltered = finalFiltered.filter(p => p.supermercado === supermarketFilter);
-            }
-            if (categoryFilter) {
-                finalFiltered = finalFiltered.filter(p => p.productos.some(prod => prod.categoria_principal === categoryFilter));
-            }
-            currentFilteredPurchases = finalFiltered;
+            currentFilteredPurchases = basePurchases.filter(p => {
+                const supermarketMatch = !chartFilter.value || (chartFilter.type === 'supermarket' && p.supermercado === chartFilter.value);
+                const categoryMatch = !chartFilter.value || (chartFilter.type !== 'supermarket') || p.productos.some(prod => prod.categoria_principal === chartFilter.value);
+                return supermarketMatch && categoryMatch;
+            });
             
-            // 5. Render all components with their specific data
+            // Renderizar componentes del dashboard
             renderSummaryCards();
-            renderSupermarketChart(dataForSupermarketChart);
-            renderCategoryChart(dataForCategoryChart);
+            renderSupermarketChart();
+            renderCategoryChart();
             renderPurchasesHistory();
-            updateDashboardTitlesAndButtons();
         }
         
         // --- HELPERS Y UTILIDADES ---
@@ -1305,20 +1299,9 @@
                 
                 El JSON debe tener la siguiente estructura:
                 {
-                  "supermercado": "string", // Nombre del supermercado
-                  "direccion_supermercado": "string", // Dirección física del supermercado si aparece, si no, null.
-                  "fecha": "string", // Fecha en formato YYYY-MM-DD
-                  "productos": [
-                    {
-                      "nombre": "string", // Nombre del producto
-                      "cantidad": number, // Cantidad, por defecto 1
-                      "precio": number, // Precio total del producto (precio unitario * cantidad)
-                      "categoria_principal": "string", // Categoría principal
-                      "familia": "string", // Familia
-                      "subfamilia": "string" // Subfamilia
-                    }
-                  ],
-                  "total": number // Suma total del ticket
+                  "supermercado": "string", "direccion_supermercado": "string", "fecha": "string",
+                  "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ],
+                  "total": number
                 }
 
                 Reglas de categorización (MUY IMPORTANTE):
@@ -1327,7 +1310,7 @@
                 - Si un producto no encaja, usa 'OTROS GASTOS' -> 'Varios' -> 'Sin especificar'.
 
                 Jerarquía de Categorías Permitidas:
-                - 🛒 ALIMENTOS Y BEBIDAS
+                - 🛒 ALIMENTOS Y BEBIDAS:
                   - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas]
                   - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
                   - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado]
@@ -1340,18 +1323,18 @@
                   - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"]
                   - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"]
                   - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
-                - 🏠 HOGAR Y LIMPIEZA
+                - 🏠 HOGAR Y LIMPIEZA:
                   - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"]
                   - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"]
                   - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
-                - 🧴 HIGIENE Y CUIDADO PERSONAL
+                - 🧴 HIGIENE Y CUIDADO PERSONAL:
                   - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"]
                   - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"]
                   - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
-                - 🐾 MASCOTAS
+                - 🐾 MASCOTAS:
                   - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"]
                   - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
-                - 💸 OTROS GASTOS
+                - 💸 OTROS GASTOS:
                   - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
 
                 Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.
@@ -1521,12 +1504,16 @@
                 .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Sort alphabetically
                 .map(p => {
                     const count = productCounts[p.nombre.toLowerCase()] || 0;
+                    const imageHtml = p.imageUrl 
+                        ? `<img src="${p.imageUrl}" alt="${p.nombre}" class="w-12 h-12 object-cover rounded-md">`
+                        : `<div class="product-image-placeholder flex items-center justify-center rounded-md"><i class="fas fa-camera"></i></div>`;
+
                     return `
                     <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-4">${imageHtml}</td>
                         <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
                         <td class="px-6 py-4">${p.categoria_principal}</td>
                         <td class="px-6 py-4">${p.familia}</td>
-                        <td class="px-6 py-4">${p.subfamilia}</td>
                         <td class="px-6 py-4 text-center">${count}</td>
                         <td class="px-6 py-4 text-center">
                             <button class="edit-product-btn text-indigo-600 hover:text-indigo-900" data-id="${p.id}">
@@ -1545,12 +1532,63 @@
             document.getElementById('edit-product-original-name').value = product.nombre;
             document.getElementById('edit-product-name').value = product.nombre;
             
+            const previewContainer = document.getElementById('edit-image-preview');
+            if (product.imageUrl) {
+                previewContainer.innerHTML = `<img src="${product.imageUrl}" alt="${product.nombre}" class="w-40 h-40 object-cover rounded-lg">`;
+            } else {
+                previewContainer.innerHTML = `<div class="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>`;
+            }
+
             populatePrincipalDropdown('edit-category-principal', product.categoria_principal);
             populateFamiliaDropdown(product.familia, 'edit-category-familia', product.categoria_principal);
             populateSubfamiliaDropdown(product.subfamilia, 'edit-category-subfamilia', product.categoria_principal, product.familia);
 
             showModal('edit-product-modal');
         }
+
+        async function generateProductImage() {
+            const productName = document.getElementById('edit-product-name').value;
+            if (!productName) {
+                showMessage("Error", "Por favor, introduce un nombre de producto primero.");
+                return;
+            }
+
+            const previewContainer = document.getElementById('edit-image-preview');
+            previewContainer.innerHTML = `<div class="loader"></div>`;
+
+            try {
+                const prompt = `a clean, simple icon of ${productName}, on a white background, studio quality`;
+                
+                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+                const apiKey = firebaseConfig.apiKey;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(`API Error: ${errorBody.error.message}`);
+                }
+
+                const result = await response.json();
+                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    previewContainer.innerHTML = `<img src="${imageUrl}" alt="${productName}" class="w-40 h-40 object-cover rounded-lg">`;
+                } else {
+                    throw new Error("No se recibió ninguna imagen.");
+                }
+
+            } catch (error) {
+                console.error("Error generating image:", error);
+                showMessage("Error de IA", `No se pudo generar la imagen. ${error.message}`);
+                previewContainer.innerHTML = `<div class="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-exclamation-triangle fa-3x"></i></div>`;
+            }
+        }
+
 
         function populatePrincipalDropdown(selectId, selectedValue) {
             const select = document.getElementById(selectId);
@@ -1583,6 +1621,7 @@
             const newCat = document.getElementById('edit-category-principal').value;
             const newFam = document.getElementById('edit-category-familia').value;
             const newSub = document.getElementById('edit-category-subfamilia').value;
+            const newImageUrl = document.querySelector('#edit-image-preview img')?.src || null;
 
             hideModal('edit-product-modal');
             processingOverlay.classList.remove('hidden');
@@ -1597,7 +1636,8 @@
                     nombre: newName,
                     categoria_principal: newCat,
                     familia: newFam,
-                    subfamilia: newSub
+                    subfamilia: newSub,
+                    imageUrl: newImageUrl
                 });
 
                 // 2. Update all tickets containing this product
@@ -1629,12 +1669,22 @@
         }
 
 
-        function renderSupermarketChart(purchases) {
+        function renderSupermarketChart() {
             const ctx = document.getElementById('supermarket-chart').getContext('2d');
-            const data = purchases.reduce((acc, p) => {
+            let data = currentFilteredPurchases.reduce((acc, p) => {
                 acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
                 return acc;
             }, {});
+
+            if (chartFilter.type === 'category') {
+                data = currentFilteredPurchases
+                    .filter(p => p.productos.some(prod => prod.categoria_principal === chartFilter.value))
+                    .reduce((acc, p) => {
+                        acc[p.supermercado] = (acc[p.supermercado] || 0) + p.total;
+                        return acc;
+                    }, {});
+            }
+
 
             if (supermarketChart) supermarketChart.destroy();
             supermarketChart = new Chart(ctx, {
@@ -1649,13 +1699,11 @@
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    plugins: {
-                        legend: { position: 'bottom' },
-                    },
+                    plugins: { legend: { position: 'bottom' }, },
                     onClick: (evt, elements) => {
                         if (elements.length > 0) {
                             const clickedLabel = supermarketChart.data.labels[elements[0].index];
-                            supermarketFilter = clickedLabel;
+                            chartFilter = { type: 'supermarket', value: clickedLabel };
                             renderDashboard();
                         }
                     }
@@ -1663,11 +1711,16 @@
             });
         }
         
-        function renderCategoryChart(purchases) {
-            const ctx = document.getElementById('category-chart').getContext('2d');
+        function renderCategoryChart() {
+             const ctx = document.getElementById('category-chart').getContext('2d');
             const data = {};
+            
+            let purchasesForChart = currentFilteredPurchases;
+            if (chartFilter.type === 'supermarket') {
+                purchasesForChart = currentFilteredPurchases.filter(p => p.supermercado === chartFilter.value);
+            }
 
-            purchases.forEach(purchase => {
+            purchasesForChart.forEach(purchase => {
                 purchase.productos.forEach(product => {
                     let key;
                     if (categoryChartLevel === 1) {
@@ -1697,84 +1750,48 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' },
-                    },
+                    plugins: { legend: { position: 'bottom' }, },
                     onClick: handleCategoryChartClick
                 }
             });
         }
         
-        function handleSupermarketChartBack() {
-            supermarketFilter = null;
+        function resetChartFilter() {
+            chartFilter = { type: null, value: null };
             renderDashboard();
         }
 
         function handleCategoryChartClick(evt, elements) {
-            if (elements.length === 0) return;
-            const clickedLabel = categoryChart.data.labels[elements[0].index];
-
-            if (categoryChartLevel === 1) {
-                categoryFilter = clickedLabel;
-                selectedPrincipal = clickedLabel;
-                categoryChartLevel = 2;
-            } else if (categoryChartLevel === 2) {
-                selectedFamilia = clickedLabel;
-                categoryChartLevel = 3;
+            if (elements.length > 0) {
+                const clickedLabel = categoryChart.data.labels[elements[0].index];
+                if (categoryChartLevel === 1) {
+                    chartFilter = { type: 'category', value: clickedLabel };
+                    
+                    selectedPrincipal = clickedLabel;
+                    categoryChartLevel = 2;
+                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
+                    document.getElementById('category-chart-back-btn').classList.remove('hidden');
+                    renderCategoryChart();
+                } else if (categoryChartLevel === 2) {
+                    selectedFamilia = clickedLabel;
+                    categoryChartLevel = 3;
+                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedFamilia}`;
+                    renderCategoryChart();
+                }
             }
-            renderDashboard();
         }
 
         function handleCategoryChartBack() {
             if (categoryChartLevel === 3) {
                 categoryChartLevel = 2;
-                selectedFamilia = null;
+                 document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
             } else if (categoryChartLevel === 2) {
                 categoryChartLevel = 1;
-                selectedPrincipal = null;
-                categoryFilter = null;
+                document.getElementById('category-chart-title').textContent = 'Gasto por Categoría Principal';
+                document.getElementById('category-chart-back-btn').classList.add('hidden');
+                resetChartFilter();
             }
-            renderDashboard();
-        }
-
-        function updateDashboardTitlesAndButtons() {
-            // Supermarket Chart
-            const supermarketBackBtn = document.getElementById('supermarket-chart-back-btn');
-            const supermarketTitle = document.getElementById('supermarket-chart-title');
-            if (supermarketFilter) {
-                supermarketBackBtn.classList.remove('hidden');
-                supermarketTitle.textContent = `Gasto en: ${supermarketFilter}`;
-            } else {
-                supermarketBackBtn.classList.add('hidden');
-                supermarketTitle.textContent = 'Gasto por Supermercado';
-            }
-
-            // Category Chart
-            const categoryBackBtn = document.getElementById('category-chart-back-btn');
-            const categoryTitle = document.getElementById('category-chart-title');
-            if (categoryChartLevel > 1) {
-                categoryBackBtn.classList.remove('hidden');
-                if (categoryChartLevel === 2) {
-                    categoryTitle.textContent = `Desglose de: ${selectedPrincipal}`;
-                } else if (categoryChartLevel === 3) {
-                    categoryTitle.textContent = `Desglose de: ${selectedFamilia}`;
-                }
-            } else {
-                categoryBackBtn.classList.add('hidden');
-                categoryTitle.textContent = 'Gasto por Categoría Principal';
-            }
-
-            // History Table Title
-            const historyTitle = document.getElementById('history-title');
-            const activeFilters = [];
-            if(supermarketFilter) activeFilters.push(`Supermercado: "${supermarketFilter}"`);
-            if(categoryFilter) activeFilters.push(`Categoría: "${categoryFilter}"`);
-
-            if (activeFilters.length > 0) {
-                historyTitle.textContent = `Historial (Filtros: ${activeFilters.join(' & ')})`;
-            } else {
-                historyTitle.textContent = 'Historial de Compras';
-            }
+            renderCategoryChart();
         }
         
         function handleSelectAll(e) {
