@@ -1619,9 +1619,12 @@
         async function generateImageWithPrompt(prompt, container) {
             container.innerHTML = `<div class="loader"></div>`;
             try {
-                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseModalities: ['IMAGE'] },
+                };
                 const apiKey = firebaseConfig.apiKey;
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -1635,10 +1638,12 @@
                 }
 
                 const result = await response.json();
-                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                    return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                
+                if (base64Data) {
+                    return `data:image/png;base64,${base64Data}`;
                 } else {
-                     throw new Error("No se recibió ninguna imagen de la API.");
+                    throw new Error("No se recibió ninguna imagen de la API.");
                 }
 
             } catch (error) {
