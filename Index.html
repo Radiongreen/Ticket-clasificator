@@ -25,44 +25,23 @@
         .modal { transition: opacity 0.3s ease; }
         #app-container.hidden, #landing-page.hidden { display: none; }
         .table-actions button:disabled { background-color: #d1d5db; cursor: not-allowed; }
-        .achievement.unlocked { opacity: 1; }
-        .achievement.locked { opacity: 0.4; filter: grayscale(100%); }
         .premium-feature { position: relative; border: 2px dashed #d1d5db; padding: 2rem; border-radius: 0.5rem; margin-top: 1rem; }
         .premium-overlay { position: absolute; inset: 0; background-color: rgba(249, 250, 251, 0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-radius: 0.5rem; cursor: pointer; }
         #ads-banner.hidden { display: none; }
         #user-menu { transition: opacity 0.3s, transform 0.3s; }
         .nav-container { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
         .nav-container::-webkit-scrollbar { display: none; }
-        .confirm-input {
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            width: 100%;
-        }
-        .confirm-input:read-only {
-            background-color: #f3f4f6;
-            cursor: not-allowed;
-        }
-        .confirm-select {
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.875rem;
-            width: 100%;
-            background-color: white;
-        }
-        .product-image-placeholder {
-            width: 48px;
-            height: 48px;
-            background-color: #f3f4f6;
-            color: #9ca3af;
-        }
-        #edit-image-preview .loader, #image-options-container .loader { width: 30px; height: 30px; border-width: 4px; }
-        .image-option.selected {
-            border: 3px solid #4f46e5;
-            box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
-        }
+        .confirm-input, .confirm-select { border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; width: 100%; }
+        .confirm-input:read-only { background-color: #f3f4f6; cursor: not-allowed; }
+        .confirm-select { background-color: white; }
+        .product-image-placeholder { width: 48px; height: 48px; background-color: #f3f4f6; color: #9ca3af; }
+        #edit-image-preview .loader, #image-options-container .loader, #unsplash-loader .loader, #ai-image-container .loader { width: 30px; height: 30px; border-width: 4px; }
+        .image-option.selected { border: 3px solid #4f46e5; box-shadow: 0 0 10px rgba(79, 70, 229, 0.5); }
+        .pantry-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .pantry-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+        .expiry-badge { padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; }
+        .view-toggle-btn.active { background-color: #4f46e5; color: white; }
+        .view-toggle-btn { background-color: #e0e7ff; color: #4338ca; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,43 +49,28 @@
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <!-- LANDING PAGE (Visible para usuarios no logueados) -->
+    <!-- LANDING PAGE -->
     <div id="landing-page">
         <header class="container mx-auto p-6 flex justify-between items-center">
             <h1 class="text-2xl font-bold text-indigo-600">Gestor de Gastos IA</h1>
             <button id="landing-login-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">Iniciar Sesión</button>
         </header>
-
         <main>
             <section class="text-center py-20 px-6 bg-white">
                 <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">La forma más inteligente de controlar tus gastos de supermercado.</h2>
                 <p class="mt-4 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">Convierte tus tickets en datos, descubre tus hábitos de consumo y deja que nuestro Chef Inteligente te diga qué cocinar para no desperdiciar comida.</p>
                 <button id="landing-register-btn" class="mt-8 bg-indigo-600 text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition-colors">Regístrate Gratis con Google</button>
             </section>
-
             <section class="py-20">
                 <div class="container mx-auto px-6 text-center">
                     <h3 class="text-3xl font-bold mb-16">Todo lo que necesitas para ahorrar de verdad</h3>
                     <div class="grid md:grid-cols-3 gap-12">
-                        <div class="bg-white p-8 rounded-lg shadow-md">
-                            <i class="fas fa-camera fa-3x text-indigo-500"></i>
-                            <h4 class="text-xl font-bold mt-4 mb-2">Escanea y Olvídate</h4>
-                            <p class="text-gray-600">Saca una foto a tu ticket y nuestra IA extraerá cada producto, precio y categoría por ti. Di adiós a la entrada manual de datos.</p>
-                        </div>
-                        <div class="bg-white p-8 rounded-lg shadow-md">
-                            <i class="fas fa-chart-pie fa-3x text-indigo-500"></i>
-                            <h4 class="text-xl font-bold mt-4 mb-2">Entiende tus Gastos</h4>
-                            <p class="text-gray-600">Con gráficos interactivos y una categorización detallada, sabrás exactamente a dónde va tu dinero. Toma el control de tus finanzas.</p>
-                        </div>
-                        <div class="bg-white p-8 rounded-lg shadow-md">
-                            <i class="fas fa-utensils fa-3x text-indigo-500"></i>
-                            <h4 class="text-xl font-bold mt-4 mb-2">Cocina con lo que Tienes</h4>
-                            <p class="text-gray-600">Nuestro Chef Inteligente analiza tu despensa virtual y te sugiere recetas deliciosas para que no desperdicies comida.</p>
-                        </div>
+                        <div class="bg-white p-8 rounded-lg shadow-md"><i class="fas fa-camera fa-3x text-indigo-500"></i><h4 class="text-xl font-bold mt-4 mb-2">Escanea y Olvídate</h4><p class="text-gray-600">Saca una foto a tu ticket y nuestra IA extraerá cada producto, precio y categoría por ti.</p></div>
+                        <div class="bg-white p-8 rounded-lg shadow-md"><i class="fas fa-chart-pie fa-3x text-indigo-500"></i><h4 class="text-xl font-bold mt-4 mb-2">Entiende tus Gastos</h4><p class="text-gray-600">Con gráficos interactivos y una categorización detallada, sabrás exactamente a dónde va tu dinero.</p></div>
+                        <div class="bg-white p-8 rounded-lg shadow-md"><i class="fas fa-utensils fa-3x text-indigo-500"></i><h4 class="text-xl font-bold mt-4 mb-2">Cocina con lo que Tienes</h4><p class="text-gray-600">Nuestro Chef Inteligente analiza tu despensa virtual y te sugiere recetas deliciosas para no desperdiciar comida.</p></div>
                     </div>
                 </div>
             </section>
-
             <section class="py-20 bg-white text-center">
                 <h3 class="text-3xl font-bold">¿Listo para empezar a ahorrar?</h3>
                 <button id="final-cta-btn" class="mt-8 bg-indigo-600 text-white font-bold py-4 px-8 rounded-lg text-lg hover:bg-indigo-700 transition-colors">Crea tu Cuenta Gratis</button>
@@ -114,8 +78,7 @@
         </main>
     </div>
 
-
-    <!-- CONTENEDOR PRINCIPAL DE LA APP (Oculto inicialmente) -->
+    <!-- CONTENEDOR PRINCIPAL DE LA APP -->
     <div id="app-container" class="hidden">
         <div class="container mx-auto p-4 md:p-8">
             <header class="mb-8 flex justify-between items-center">
@@ -133,7 +96,7 @@
                         <nav class="flex -mb-px" aria-label="Tabs">
                             <button class="tab-button active" data-tab="analizar-ticket"><i class="fas fa-receipt mr-2"></i>Analizar Ticket</button>
                             <button class="tab-button" data-tab="mis-gastos"><i class="fas fa-chart-pie mr-2"></i>Mis Gastos</button>
-                            <button class="tab-button" data-tab="mis-productos"><i class="fas fa-tag mr-2"></i>Mis Productos</button>
+                            <button class="tab-button" data-tab="mi-despensa"><i class="fas fa-box-open mr-2"></i>Mi Despensa</button>
                             <button class="tab-button" data-tab="lista-compra"><i class="fas fa-list-check mr-2"></i>Lista de Compra</button>
                             <button class="tab-button" data-tab="chef-inteligente"><i class="fas fa-utensils mr-2"></i>Chef Inteligente</button>
                             <button class="tab-button" data-tab="mi-hogar"><i class="fas fa-users mr-2"></i>Mi Hogar</button>
@@ -150,391 +113,137 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                                 <h2 class="text-xl font-semibold mb-4">1. Sube tu Ticket</h2>
-                                <div id="image-uploader" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                                    <div class="space-y-1 text-center">
-                                        <i class="fas fa-camera fa-3x text-gray-400"></i>
-                                        <div class="flex text-sm text-gray-600">
-                                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                                <span>Sube un archivo</span>
-                                                <input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*">
-                                            </label>
-                                            <p class="pl-1">o arrástralo aquí</p>
-                                        </div>
-                                        <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-                                    </div>
-                                </div>
-                                <button id="process-ticket-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400" disabled>
-                                    <i class="fas fa-cogs mr-2"></i> Procesar Ticket
-                                </button>
+                                <div id="image-uploader" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"><div class="space-y-1 text-center"><i class="fas fa-camera fa-3x text-gray-400"></i><div class="flex text-sm text-gray-600"><label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"><span>Sube un archivo</span><input id="file-upload" name="file-upload" type="file" class="sr-only" accept="image/*"></label><p class="pl-1">o arrástralo aquí</p></div><p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p></div></div>
+                                <button id="process-ticket-btn" class="mt-6 w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 disabled:bg-gray-400" disabled><i class="fas fa-cogs mr-2"></i> Procesar Ticket</button>
                             </div>
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <h2 class="text-xl font-semibold mb-4">2. Vista Previa</h2>
-                                <div id="image-preview-container" class="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
-                                    <p>Aquí verás la imagen de tu ticket.</p>
-                                </div>
-                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><h2 class="text-xl font-semibold mb-4">2. Vista Previa</h2><div id="image-preview-container" class="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500"><p>Aquí verás la imagen de tu ticket.</p></div></div>
                         </div>
                     </div>
 
                     <!-- Pestaña: Mis Gastos -->
                     <div id="mis-gastos" class="tab-content">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
-                            <h2 class="text-xl font-semibold mb-4">Filtros de Visualización</h2>
-                            <div class="flex flex-wrap gap-4">
-                                <select id="context-filter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
-                                <select id="filter-year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
-                                <select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                                <h3 class="text-lg font-semibold mb-2">Gasto Total</h3>
-                                <p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                                <h3 class="text-lg font-semibold mb-2">Nº de Compras</h3>
-                                <p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center">
-                                <h3 class="text-lg font-semibold mb-2">vs. Mes Anterior</h3>
-                                <div id="monthly-comparison" class="text-3xl font-bold text-gray-500">--</div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 id="supermarket-chart-title" class="text-lg font-semibold">Gasto por Supermercado</h3>
-                                    <button id="supermarket-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
-                                </div>
-                                <div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 id="category-chart-title" class="text-lg font-semibold">Gasto por Categoría Principal</h3>
-                                    <button id="category-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button>
-                                </div>
-                                <div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div>
-                            </div>
-                        </div>
-                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8"><h2 class="text-xl font-semibold mb-4">Filtros de Visualización</h2><div class="flex flex-wrap gap-4"><select id="context-filter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select><select id="filter-year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select><select id="filter-month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-auto p-2.5"></select></div></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8"><div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center"><h3 class="text-lg font-semibold mb-2">Gasto Total</h3><p id="total-expense" class="text-3xl font-bold text-indigo-600">0,00 €</p></div><div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center"><h3 class="text-lg font-semibold mb-2">Nº de Compras</h3><p id="total-purchases" class="text-3xl font-bold text-indigo-600">0</p></div><div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-center items-center"><h3 class="text-lg font-semibold mb-2">vs. Mes Anterior</h3><div id="monthly-comparison" class="text-3xl font-bold text-gray-500">--</div></div></div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"><div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><div class="flex justify-between items-center mb-4"><h3 id="supermarket-chart-title" class="text-lg font-semibold">Gasto por Supermercado</h3><button id="supermarket-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button></div><div class="h-64 md:h-80"><canvas id="supermarket-chart"></canvas></div></div><div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><div class="flex justify-between items-center mb-4"><h3 id="category-chart-title" class="text-lg font-semibold">Gasto por Categoría Principal</h3><button id="category-chart-back-btn" class="hidden text-sm text-indigo-600 hover:underline"><i class="fas fa-arrow-left mr-1"></i> Volver</button></div><div class="h-64 md:h-80"><canvas id="category-chart"></canvas></div></div></div>
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold" id="history-title">Historial de Compras</h3><div class="table-actions flex items-center gap-4"><button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled><i class="fas fa-trash mr-2"></i>Eliminar seleccionados</button></div></div><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th scope="col" class="p-4"><input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"></th><th scope="col" class="px-6 py-3">Fecha</th><th scope="col" class="px-6 py-3">Supermercado</th><th scope="col" class="px-6 py-3">Total</th><th scope="col" class="px-6 py-3">Asignado a</th></tr></thead><tbody id="purchases-history"></tbody></table></div></div>
+                        <div id="ads-banner" class="hidden mt-8 p-4 bg-gray-200 rounded-lg text-center text-gray-600"><p class="text-sm">Espacio para publicidad (Visible solo para usuarios gratuitos)</p></div>
+                    </div>
+
+                    <!-- Pestaña: Mi Despensa (Fusionada) -->
+                    <div id="mi-despensa" class="tab-content">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold" id="history-title">Historial de Compras</h3>
-                                <div class="table-actions flex items-center gap-4">
-                                    <button id="delete-selected-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>
-                                        <i class="fas fa-trash mr-2"></i>Eliminar seleccionados
-                                    </button>
+                                <h2 class="text-xl font-semibold">Mi Despensa</h2>
+                                <div class="flex items-center gap-2">
+                                    <button id="view-toggle-grid" class="view-toggle-btn active p-2 rounded-md leading-none"><i class="fas fa-th-large"></i></button>
+                                    <button id="view-toggle-list" class="view-toggle-btn p-2 rounded-md leading-none"><i class="fas fa-list"></i></button>
                                 </div>
                             </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left text-gray-500">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="p-4">
-                                                <input type="checkbox" id="select-all-checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                            </th>
-                                            <th scope="col" class="px-6 py-3">Fecha</th>
-                                            <th scope="col" class="px-6 py-3">Supermercado</th>
-                                            <th scope="col" class="px-6 py-3">Total</th>
-                                            <th scope="col" class="px-6 py-3">Asignado a</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="purchases-history"></tbody>
-                                </table>
+                            <p class="text-sm text-gray-600 mb-4">Gestiona los productos que has comprado. Añade imágenes, corrige categorías y controla qué tienes en casa y qué se está acabando.</p>
+                            
+                            <!-- Filtros y Búsqueda -->
+                            <div class="flex flex-wrap gap-4 items-center mb-6">
+                                <div class="flex-grow">
+                                    <input type="text" id="pantry-search-input" placeholder="Buscar productos..." class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="pantry-filter-select" class="text-sm font-medium">Mostrar:</label>
+                                    <select id="pantry-filter-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-2.5">
+                                        <option value="in_stock">En Despensa</option>
+                                        <option value="out_of_stock">Agotados</option>
+                                        <option value="all">Todos</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        <div id="ads-banner" class="hidden mt-8 p-4 bg-gray-200 rounded-lg text-center text-gray-600">
-                            <p class="text-sm">Espacio para publicidad (Visible solo para usuarios gratuitos)</p>
+
+                            <!-- Contenedor para las vistas -->
+                            <div id="pantry-view-container">
+                                <!-- Vista de Grid (antes Despensa Virtual) -->
+                                <div id="pantry-grid-view" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                                <!-- Vista de Lista (antes Mis Productos) -->
+                                <div id="pantry-list-view" class="hidden overflow-x-auto">
+                                    <table class="w-full text-sm text-left text-gray-500">
+                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-3">Imagen</th>
+                                                <th scope="col" class="px-6 py-3">Producto</th>
+                                                <th scope="col" class="px-6 py-3">Estado</th>
+                                                <th scope="col" class="px-6 py-3">Categoría</th>
+                                                <th scope="col" class="px-6 py-3">Nº Compras</th>
+                                                <th scope="col" class="px-6 py-3">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Pestaña: Mis Productos -->
-                    <div id="mis-productos" class="tab-content">
-                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">Gestión de Productos</h2>
-                            <p class="text-sm text-gray-600 mb-4">Aquí puedes ver todos los productos únicos que has comprado, añadirles una imagen y corregir su categorización si es necesario.</p>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left text-gray-500">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="px-6 py-3">Imagen</th>
-                                            <th scope="col" class="px-6 py-3">Producto</th>
-                                            <th scope="col" class="px-6 py-3">Categoría Principal</th>
-                                            <th scope="col" class="px-6 py-3">Familia</th>
-                                            <th scope="col" class="px-6 py-3">Nº Compras</th>
-                                            <th scope="col" class="px-6 py-3">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="products-table"></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Pestaña: Lista de la Compra -->
                     <div id="lista-compra" class="tab-content">
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                             <h2 class="text-xl font-semibold mb-4">Lista de la Compra Inteligente</h2>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="add-item-input" placeholder="Añadir producto..." class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
-                                <button id="add-item-btn" class="bg-indigo-600 text-white px-4 rounded-lg"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div id="shopping-list" class="space-y-2 mb-6">
-                            </div>
-                            <div class="border-t pt-4">
-                                 <h3 class="font-semibold mb-2">Sugerencias Predictivas</h3>
-                                 <p class="text-sm text-gray-600 mb-4">Basado en tus hábitos de consumo, puede que necesites reponer esto:</p>
-                                 <button id="suggest-items-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                    <i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias
-                                 </button>
-                                 <div id="suggestions-container" class="mt-4 space-y-2"></div>
-                            </div>
+                            <div class="flex gap-2 mb-4"><input type="text" id="add-item-input" placeholder="Añadir producto..." class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5"><button id="add-item-btn" class="bg-indigo-600 text-white px-4 rounded-lg"><i class="fas fa-plus"></i></button></div>
+                            <div id="shopping-list" class="space-y-2 mb-6"></div>
+                            <div class="border-t pt-4"><h3 class="font-semibold mb-2">Sugerencias Predictivas</h3><p class="text-sm text-gray-600 mb-4">Pulsa para que la IA analice tu despensa y hábitos de consumo para sugerirte qué comprar.</p><button id="suggest-items-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"><i class="fas fa-wand-magic-sparkles mr-2"></i>Generar Sugerencias</button><div id="suggestions-container" class="mt-4 space-y-2"></div></div>
                         </div>
                     </div>
 
-                    <!-- Pestaña: Chef Inteligente -->
-                    <div id="chef-inteligente" class="tab-content">
-                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2>
-                            <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que probablemente tienes en tu despensa.</p>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
-                                <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                                    Preguntar
-                                 </button>
-                            </div>
-                            <div id="chef-suggestions-container" class="mt-6 p-4 bg-gray-50 rounded-lg min-h-[100px]">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pestaña: Mi Hogar -->
-                    <div id="mi-hogar" class="tab-content">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <h2 class="text-xl font-semibold mb-4">Gestionar Mi Hogar</h2>
-                                <div id="household-management">
-                                    <!-- Contenido dinámico: crear, unirse o ver miembros -->
-                                </div>
-                            </div>
-                            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                                <h2 class="text-xl font-semibold mb-4">Miembros del Hogar</h2>
-                                <ul id="household-members-list" class="space-y-3">
-                                    <!-- Lista de miembros -->
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pestaña: Mis Logros -->
-                    <div id="logros" class="tab-content">
-                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">Mis Logros</h2>
-                            <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8">
-                                <!-- Los logros se generarán aquí -->
-                            </div>
-                            <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2>
-                            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                                <div class="flex items-center">
-                                    <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i>
-                                    <div>
-                                        <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3>
-                                        <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pestaña: Premium -->
-                    <div id="premium" class="tab-content">
-                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                            <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2>
-                            
-                            <div class="premium-feature">
-                                <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3>
-                                <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p>
-                                <div class="premium-overlay">
-                                    <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
-                                    <p class="font-semibold">Función Premium</p>
-                                    <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
-                                </div>
-                            </div>
-
-                            <div class="premium-feature">
-                                <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3>
-                                <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p>
-                                 <div class="premium-overlay">
-                                    <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
-                                    <p class="font-semibold">Función Premium</p>
-                                    <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button>
-                                </div>
-                            </div>
-                         </div>
-                    </div>
-
+                    <!-- Resto de pestañas -->
+                    <div id="chef-inteligente" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2> <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que tienes en tu despensa.</p> <div class="flex gap-2 mb-4"> <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5"> <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"> Preguntar </button> </div> <div id="chef-suggestions-container" class="mt-6 p-4 bg-gray-50 rounded-lg min-h-[100px]"> </div> </div> </div>
+                    <div id="mi-hogar" class="tab-content"> <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Gestionar Mi Hogar</h2> <div id="household-management"> </div> </div> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Miembros del Hogar</h2> <ul id="household-members-list" class="space-y-3"> </ul> </div> </div> </div>
+                    <div id="logros" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Mis Logros</h2> <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8"></div> <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2> <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg"> <div class="flex items-center"> <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i> <div> <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3> <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p> </div> </div> </div> </div> </div>
+                    <div id="premium" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3> <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p> <div class="premium-overlay"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button> </div> </div> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3> <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p> <div class="premium-overlay"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button> </div> </div> </div> </div>
                 </main>
             </div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="processing-overlay" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
-            <div class="loader mx-auto"></div>
-            <p id="processing-text" class="mt-4 text-lg font-medium">Procesando ticket...</p>
-        </div>
-    </div>
-    <div id="message-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto">
-            <h3 id="modal-title" class="text-lg font-bold"></h3>
-            <p id="modal-message" class="mt-2 text-sm text-gray-600"></p>
-            <div class="mt-4 text-right">
-                <button id="modal-close-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Cerrar</button>
-            </div>
-        </div>
-    </div>
-    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-auto max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">Confirmar y Editar Datos del Ticket</h3>
-                <p class="text-sm text-gray-600">Revisa y corrige los datos extraídos por la IA antes de guardar.</p>
-            </div>
-            <div id="confirmation-content" class="p-6 overflow-y-auto"></div>
-            <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
-                <div class="font-bold text-lg">Total: <span id="confirmation-total">0.00</span>€</div>
-                <div class="flex gap-4">
-                    <button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
-                    <button id="confirm-continue-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Continuar a Asignación</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="assign-expense-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">Asignar Gastos del Ticket</h3>
-                <p class="text-sm text-gray-600">Decide si cada producto es un gasto personal o del hogar.</p>
-            </div>
-            <div id="assign-expense-content" class="p-6 overflow-y-auto"></div>
-            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
-                <button id="assign-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Compra</button>
-            </div>
-        </div>
-    </div>
-    <div id="delete-confirm-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto">
-            <h3 id="delete-modal-title" class="text-lg font-bold">Confirmar eliminación</h3>
-            <p id="delete-modal-message" class="mt-2 text-sm text-gray-600"></p>
-            <div class="mt-4 flex justify-end gap-4">
-                <button id="delete-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
-                <button id="delete-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Eliminar</button>
-            </div>
-        </div>
-    </div>
-    <div id="welcome-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto text-center">
-            <i class="fas fa-rocket fa-3x text-indigo-500 mb-4"></i>
-            <h3 class="text-2xl font-bold">¡Bienvenido a tu Gestor de Gastos!</h3>
-            <p class="mt-4 text-gray-600">Para empezar, ve a la pestaña <strong>"Analizar Ticket"</strong>, sube una foto de tu primer recibo, y deja que la magia de la IA haga el resto.</p>
-            <div class="mt-6">
-                <button id="welcome-close-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">¡Entendido!</button>
-            </div>
-        </div>
-    </div>
-    <div id="upgrade-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto">
-            <div class="text-center">
-                <i class="fas fa-star fa-3x text-yellow-500 mb-4"></i>
-                <h3 class="text-2xl font-bold">Desbloquea todo el Potencial</h3>
-            </div>
-            <ul class="mt-4 space-y-2 text-gray-600">
-                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Análisis de Precios:</strong> Compara supermercados y sigue la evolución de los precios.</li>
-                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Presupuestos Inteligentes:</strong> Fija límites por categoría y recibe alertas.</li>
-                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Exportación de Datos:</strong> Descarga tus gastos en CSV o PDF.</li>
-                <li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Sin Anuncios:</strong> Disfruta de una experiencia limpia y sin interrupciones.</li>
-            </ul>
-            <div class="mt-6">
-                <button class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600">Suscribirse a Premium (Próximamente)</button>
-                <button id="upgrade-close-btn" class="w-full mt-2 text-sm text-gray-500 hover:underline">Quizás más tarde</button>
-            </div>
-        </div>
-    </div>
+    <div id="processing-overlay" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center"><div class="bg-white p-8 rounded-lg shadow-xl text-center"><div class="loader mx-auto"></div><p id="processing-text" class="mt-4 text-lg font-medium">Procesando...</p></div></div>
+    <div id="message-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto"><h3 id="modal-title" class="text-lg font-bold"></h3><p id="modal-message" class="mt-2 text-sm text-gray-600"></p><div class="mt-4 text-right"><button id="modal-close-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Cerrar</button></div></div></div>
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-auto max-h-[90vh] flex flex-col"><div class="p-6 border-b"><h3 class="text-xl font-bold text-gray-900">Confirmar y Editar Datos del Ticket</h3><p class="text-sm text-gray-600">Revisa y corrige los datos extraídos por la IA antes de guardar.</p></div><div id="confirmation-content" class="p-6 overflow-y-auto"></div><div class="p-4 bg-gray-50 border-t flex justify-between items-center"><div class="font-bold text-lg">Total: <span id="confirmation-total">0.00</span>€</div><div class="flex gap-4"><button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button><button id="confirm-continue-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Continuar a Asignación</button></div></div></div></div>
+    <div id="assign-expense-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto max-h-[90vh] flex flex-col"><div class="p-6 border-b"><h3 class="text-xl font-bold text-gray-900">Asignar Gastos del Ticket</h3><p class="text-sm text-gray-600">Decide si cada producto es un gasto personal o del hogar.</p></div><div id="assign-expense-content" class="p-6 overflow-y-auto"></div><div class="p-4 bg-gray-50 border-t flex justify-end gap-4"><button id="assign-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Compra</button></div></div></div>
+    <div id="delete-confirm-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-auto"><h3 id="delete-modal-title" class="text-lg font-bold">Confirmar eliminación</h3><p id="delete-modal-message" class="mt-2 text-sm text-gray-600"></p><div class="mt-4 flex justify-end gap-4"><button id="delete-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button><button id="delete-confirm-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Eliminar</button></div></div></div>
+    <div id="welcome-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto text-center"><i class="fas fa-rocket fa-3x text-indigo-500 mb-4"></i><h3 class="text-2xl font-bold">¡Bienvenido a tu Gestor de Gastos!</h3><p class="mt-4 text-gray-600">Para empezar, ve a la pestaña <strong>"Analizar Ticket"</strong> y sube una foto de tu primer recibo.</p><div class="mt-6"><button id="welcome-close-btn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">¡Entendido!</button></div></div></div>
+    <div id="upgrade-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-auto"><div class="text-center"><i class="fas fa-star fa-3x text-yellow-500 mb-4"></i><h3 class="text-2xl font-bold">Desbloquea todo el Potencial</h3></div><ul class="mt-4 space-y-2 text-gray-600"><li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Análisis de Precios:</strong> Compara supermercados y sigue la evolución de los precios.</li><li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Presupuestos Inteligentes:</strong> Fija límites por categoría y recibe alertas.</li><li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Exportación de Datos:</strong> Descarga tus gastos en CSV o PDF.</li><li class="flex items-start"><i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Sin Anuncios:</strong> Disfruta de una experiencia limpia y sin interrupciones.</li></ul><div class="mt-6"><button class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600">Suscribirse a Premium (Próximamente)</button><button id="upgrade-close-btn" class="w-full mt-2 text-sm text-gray-500 hover:underline">Quizás más tarde</button></div></div></div>
     
     <!-- Modal de Edición de Producto -->
-    <div id="edit-product-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">Editar Producto</h3>
-                <p class="text-sm text-gray-600">Corrige los detalles del producto y la categorización.</p>
-            </div>
-            <div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-1 flex flex-col items-center">
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Imagen del Producto</h4>
-                    <div id="edit-image-preview" class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                        <!-- La imagen o el loader se insertarán aquí -->
-                    </div>
-                    <button id="change-image-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300">
-                        <i class="fas fa-edit mr-2"></i>Cambiar Imagen
-                    </button>
-                </div>
-                <div class="md:col-span-2 space-y-4">
-                    <input type="hidden" id="edit-product-id">
-                    <input type="hidden" id="edit-product-original-name">
-                    <div>
-                        <label for="edit-product-name" class="block text-sm font-medium text-gray-700">Nombre del Producto</label>
-                        <input type="text" id="edit-product-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="edit-category-principal" class="block text-sm font-medium text-gray-700">Categoría Principal</label>
-                        <select id="edit-category-principal" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
-                    </div>
-                    <div>
-                        <label for="edit-category-familia" class="block text-sm font-medium text-gray-700">Familia</label>
-                        <select id="edit-category-familia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
-                    </div>
-                    <div>
-                        <label for="edit-category-subfamilia" class="block text-sm font-medium text-gray-700">Subfamilia</label>
-                        <select id="edit-category-subfamilia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
-                <button id="edit-product-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
-                <button id="edit-product-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
+    <div id="edit-product-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0"><div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col"><div class="p-6 border-b"><h3 class="text-xl font-bold text-gray-900">Editar Producto</h3><p class="text-sm text-gray-600">Corrige los detalles del producto y la categorización.</p></div><div class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6"><div class="md:col-span-1 flex flex-col items-center"><h4 class="text-sm font-medium text-gray-700 mb-2">Imagen del Producto</h4><div id="edit-image-preview" class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center mb-4"></div><button id="change-image-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"><i class="fas fa-edit mr-2"></i>Cambiar Imagen</button></div><div class="md:col-span-2 space-y-4"><input type="hidden" id="edit-product-id"><input type="hidden" id="edit-product-original-name"><div><label for="edit-product-name" class="block text-sm font-medium text-gray-700">Nombre del Producto</label><input type="text" id="edit-product-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div><div><label for="edit-category-principal" class="block text-sm font-medium text-gray-700">Categoría Principal</label><select id="edit-category-principal" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select></div><div><label for="edit-category-familia" class="block text-sm font-medium text-gray-700">Familia</label><select id="edit-category-familia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select></div><div><label for="edit-category-subfamilia" class="block text-sm font-medium text-gray-700">Subfamilia</label><select id="edit-category-subfamilia" class="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></select></div></div></div><div class="p-4 bg-gray-50 border-t flex justify-end gap-4"><button id="edit-product-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button><button id="edit-product-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Cambios</button></div></div></div>
 
-    <!-- Modal de Selección de Imagen -->
+    <!-- Modal de Selección de Imagen (REDISEÑADO) -->
     <div id="image-selection-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
         <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-auto max-h-[90vh] flex flex-col">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-bold text-gray-900">Seleccionar Imagen para <span id="image-modal-product-name" class="text-indigo-600"></span></h3>
-            </div>
+            <div class="p-6 border-b"><h3 class="text-xl font-bold text-gray-900">Asignar Imagen para <span id="image-modal-product-name" class="text-indigo-600"></span></h3></div>
             <div class="p-6 overflow-y-auto">
-                <!-- Opciones de Imagen -->
+                <!-- 1. Búsqueda de Imágenes Reales (Unsplash) -->
                 <div class="mb-6">
-                    <h4 class="font-semibold mb-2">Opciones Sugeridas por la IA</h4>
-                    <div id="image-options-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- Las imágenes generadas aparecerán aquí -->
-                    </div>
+                    <h4 class="font-semibold mb-2">Sugerencias de Imágenes Reales</h4>
+                    <p class="text-sm text-gray-500 mb-2">Selecciona la imagen que mejor represente tu producto.</p>
+                    <div id="unsplash-loader" class="text-center hidden"><div class="loader mx-auto"></div></div>
+                    <div id="image-options-container" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
                 </div>
-                <!-- Generación Personalizada -->
-                <div class="mb-6 border-t pt-4">
-                    <h4 class="font-semibold mb-2">Generar Imagen Personalizada</h4>
-                    <div class="flex gap-2">
-                        <input type="text" id="image-prompt-input" placeholder="Ej: Tomate en rama, muy rojo" class="flex-grow confirm-input">
-                        <button id="generate-custom-image-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">Generar</button>
-                    </div>
-                </div>
-                <!-- Subir Imagen Propia -->
-                <div class="border-t pt-4">
+                <!-- 2. Subir Imagen Propia -->
+                <div class="border-t pt-4 mb-4">
                      <h4 class="font-semibold mb-2">Subir tu Propia Imagen</h4>
-                     <label for="upload-image-input" class="w-full text-center cursor-pointer bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300 block">
-                        <i class="fas fa-upload mr-2"></i>Seleccionar Archivo
-                     </label>
+                     <label for="upload-image-input" class="w-full text-center cursor-pointer bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300 block"><i class="fas fa-upload mr-2"></i>Seleccionar Archivo</label>
                      <input type="file" id="upload-image-input" class="hidden" accept="image/*">
                 </div>
+                <!-- 3. Generación con IA (Experimental) -->
+                <details class="border-t pt-4">
+                    <summary class="font-semibold cursor-pointer">
+                        Generar con IA <span class="text-xs font-normal bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">Experimental</span>
+                        <i class="fas fa-info-circle text-gray-400 ml-1" title="Esta opción puede no estar disponible en tu región o requerir una cuenta de Google Cloud con facturación activa."></i>
+                    </summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2">
+                            <input type="text" id="image-prompt-input" placeholder="Ej: Tomate en rama, muy rojo" class="flex-grow confirm-input">
+                            <button id="generate-custom-image-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">Generar</button>
+                        </div>
+                        <div id="ai-image-container" class="mt-4 flex justify-center"></div>
+                    </div>
+                </details>
             </div>
             <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
                 <button id="image-select-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
@@ -552,7 +261,7 @@
         
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
         const firebaseConfig = {
-          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ", // <-- Clave de API principal de Firebase ("Browser key")
+          apiKey: "AIzaSyChOxUkl2C_4g7duYdFE0oUlQ9vpjLTJYQ",
           authDomain: "tickets-clasificator.firebaseapp.com",
           projectId: "tickets-clasificator",
           storageBucket: "tickets-clasificator.firebasestorage.app",
@@ -560,6 +269,7 @@
           appId: "1:929759305226:web:792b430618ae4a419a09f3",
           measurementId: "G-FW5ER1GV03"
         };
+        const unsplashApiKey = 'YOUR_UNSPLASH_API_KEY'; // <-- IMPORTANTE: Reemplaza esto con tu clave de Unsplash
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -584,13 +294,12 @@
         let unsubscribePurchases = () => {};
         let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
-        let activeImageSelection = {
-            context: null, // 'confirmation' or 'edit'
-            index: null, // index in currentTicketData.productos or product ID
-            imageUrl: null
-        };
+        let activeImageSelection = { context: null, identifier: null, imageUrl: null };
+        let currentPantryFilter = 'in_stock';
+        let shoppingList = [];
+        let currentPantryView = 'grid';
 
-        // --- DEFINICIÓN DE CATEGORÍAS ---
+        // --- DEFINICIÓN DE CATEGORÍAS Y CADUCIDAD ---
         const categorias = {
             "🛒 ALIMENTOS Y BEBIDAS": {
                 "🍓🥦 Frutas y Verduras": ["🥬 Verduras", "🥔 Tubérculos", "🍄 Setas y Hongos", "🍎 Frutas Frescas", "🍇 Frutas Deshidratadas"],
@@ -624,6 +333,10 @@
                 "🛍️ Varios": ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
             }
         };
+        const shelfLife = {
+            "🍓🥦 Frutas y Verduras": 7, "🥩🍗 Carnes y Aves": 5, "🐟🦐 Pescados y Mariscos": 3,
+            "🥛🥚 Lácteos y Huevos": 15, "🍞🥐 Panadería y Pastelería": 4, "default": 90
+        };
         const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E57373', '#64B5F6', '#FFF176', '#4DB6AC', '#CE93D8', '#FFD54F'];
 
         // --- DOM ELEMENTS ---
@@ -632,60 +345,43 @@
         const authContainer = document.getElementById('auth-container');
         const processingOverlay = document.getElementById('processing-overlay');
         const processingText = document.getElementById('processing-text');
-
-        // --- MANEJO DE AUTENTICACIÓN Y VISIBILIDAD ---
-        const handleLogin = () => {
-            signInWithPopup(auth, provider).catch(handleAuthError);
-        };
-
-        const handleSignOut = () => {
-            signOut(auth).catch((error) => console.error("Error al cerrar sesión:", error));
-        };
         
-        onAuthStateChanged(auth, async (user) => {
-            // Limpiar listeners anteriores para evitar duplicados
-            unsubscribePurchases();
-            unsubscribeProducts();
-            unsubscribeProfile();
+        // --- AUTH & SETUP ---
+        const handleLogin = () => signInWithPopup(auth, provider).catch(handleAuthError);
+        const handleSignOut = () => signOut(auth).catch((error) => console.error("Error al cerrar sesión:", error));
 
+        onAuthStateChanged(auth, async (user) => {
+            unsubscribePurchases(); unsubscribeProducts(); unsubscribeProfile();
             if (user) {
                 currentUser = user;
                 await setupUser(user);
                 landingPage.classList.add('hidden');
                 appContainer.classList.remove('hidden');
             } else {
-                currentUser = null;
-                userProfile = null;
+                currentUser = null; userProfile = null;
                 landingPage.classList.remove('hidden');
                 appContainer.classList.add('hidden');
                 resetAppState();
             }
         });
-        
+
         async function setupUser(user) {
             const userRef = doc(db, "users", user.uid);
             const userDoc = await getDoc(userRef);
-
             if (!userDoc.exists()) {
-                // Es un usuario nuevo
                 await setDoc(userRef, {
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    createdAt: serverTimestamp(),
-                    householdId: null,
-                    plan: 'free'
+                    displayName: user.displayName, email: user.email, photoURL: user.photoURL,
+                    createdAt: serverTimestamp(), householdId: null, plan: 'free', shoppingList: []
                 });
                 showWelcomeModal();
             }
-            
-            // Escuchar cambios en el perfil del usuario (ej: si se une a un hogar)
             unsubscribeProfile = onSnapshot(userRef, (doc) => {
                 userProfile = { id: doc.id, ...doc.data() };
+                shoppingList = userProfile.shoppingList || [];
                 renderAuthContainer(user, userProfile);
                 renderHouseholdTab(userProfile);
                 updateContextFilter(userProfile);
-                // Volver a cargar los datos si el householdId cambia
+                renderShoppingList();
                 loadInitialData(); 
                 loadProducts();
             });
@@ -693,17 +389,13 @@
 
         function loadInitialData() {
             if (!currentUser) return;
-            
-            unsubscribePurchases(); // Detener listener anterior
-
+            unsubscribePurchases();
             const ticketsQuery = query(collection(db, "tickets"), where("userId", "==", currentUser.uid));
-
-            // Usamos onSnapshot para escuchar cambios en tiempo real
             unsubscribePurchases = onSnapshot(ticketsQuery, (snapshot) => {
-                allPurchases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allPurchases = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 populateFilters();
                 renderDashboard();
-            });
+            }, error => console.error("Error loading purchases:", error));
         }
         
         function loadProducts() {
@@ -711,20 +403,17 @@
             unsubscribeProducts();
             const productsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
             unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
-                allUserProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderProductsTable();
-            });
+                allUserProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderPantry();
+            }, error => console.error("Error loading products:", error));
         }
 
-        // --- LÓGICA DE LA INTERFAZ (Tabs, Modals, etc.) ---
-        
+        // --- EVENT LISTENERS ---
         function setupEventListeners() {
-            // Botones de login en landing page
             document.getElementById('landing-login-btn').addEventListener('click', handleLogin);
             document.getElementById('landing-register-btn').addEventListener('click', handleLogin);
             document.getElementById('final-cta-btn').addEventListener('click', handleLogin);
 
-            // Navegación por pestañas
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.addEventListener('click', () => {
                     const tabName = button.dataset.tab;
@@ -732,6 +421,7 @@
                     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                     button.classList.add('active');
                     document.getElementById(tabName).classList.add('active');
+                    if (tabName === 'mi-despensa') renderPantry();
                 });
             });
 
@@ -742,51 +432,40 @@
             document.querySelectorAll('.upgrade-btn').forEach(btn => btn.addEventListener('click', () => showModal('upgrade-modal')));
             
             // Analizar Ticket
-            const fileUpload = document.getElementById('file-upload');
-            fileUpload.addEventListener('change', handleFileSelect);
-            document.getElementById('image-uploader').addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('bg-indigo-50'); });
-            document.getElementById('image-uploader').addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('bg-indigo-50'); });
-            document.getElementById('image-uploader').addEventListener('drop', handleFileDrop);
+            const uploader = document.getElementById('image-uploader');
+            const fileInput = document.getElementById('file-upload');
+            fileInput.addEventListener('change', (e) => previewFile(e.target.files[0]));
+            uploader.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('bg-indigo-50'); });
+            uploader.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('bg-indigo-50'); });
+            uploader.addEventListener('drop', (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('bg-indigo-50'); previewFile(e.dataTransfer.files[0]); });
             document.getElementById('process-ticket-btn').addEventListener('click', processTicket);
 
-            // Confirmación y guardado
+            // Confirmación
             document.getElementById('confirm-cancel-btn').addEventListener('click', () => hideModal('confirmation-modal'));
-            document.getElementById('confirm-continue-btn').addEventListener('click', () => {
-                updateTicketDataFromModal();
-                showAssignExpenseModal();
-            });
+            document.getElementById('confirm-continue-btn').addEventListener('click', () => { updateTicketDataFromModal(); showAssignExpenseModal(); });
             document.getElementById('assign-save-btn').addEventListener('click', saveTicketData);
             document.getElementById('confirmation-content').addEventListener('change', (e) => {
-                if(e.target.classList.contains('confirm-price-input')) {
-                    updateConfirmationTotal();
-                }
-                if(e.target.classList.contains('confirm-cat-principal')) {
+                if (e.target.classList.contains('confirm-price-input')) updateConfirmationTotal();
+                if (e.target.classList.contains('confirm-cat-principal')) {
                     const index = e.target.dataset.index;
                     populateFamiliaDropdown(null, `confirm-cat-familia-${index}`, e.target.value);
                 }
-                if(e.target.classList.contains('confirm-cat-familia')) {
+                if (e.target.classList.contains('confirm-cat-familia')) {
                     const index = e.target.dataset.index;
-                    const principalSelect = document.getElementById(`confirm-cat-principal-${index}`);
-                    populateSubfamiliaDropdown(null, `confirm-cat-subfamilia-${index}`, principalSelect.value, e.target.value);
+                    const pSelect = document.getElementById(`confirm-cat-principal-${index}`);
+                    populateSubfamiliaDropdown(null, `confirm-cat-subfamilia-${index}`, pSelect.value, e.target.value);
                 }
             });
             document.getElementById('confirmation-content').addEventListener('click', (e) => {
                 if (e.target.closest('.delete-product-row-btn')) {
-                    const button = e.target.closest('.delete-product-row-btn');
-                    const index = button.dataset.index;
-                    const row = document.getElementById(`product-row-${index}`);
-                    if (row) {
-                        row.remove();
-                        updateConfirmationTotal();
-                    }
+                    e.target.closest('.product-row').remove();
+                    updateConfirmationTotal();
                 }
                 if (e.target.closest('.edit-product-image-btn')) {
-                    const button = e.target.closest('.edit-product-image-btn');
-                    const index = button.dataset.index;
+                    const index = e.target.closest('.edit-product-image-btn').dataset.index;
                     openImageSelectionModal('confirmation', index);
                 }
             });
-
 
             // Mis Gastos
             document.getElementById('filter-year').addEventListener('change', renderDashboard);
@@ -795,27 +474,29 @@
             document.getElementById('select-all-checkbox').addEventListener('change', handleSelectAll);
             document.getElementById('delete-selected-btn').addEventListener('click', confirmDeleteSelected);
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
-            
-            // Mis Productos
-            document.getElementById('products-table').addEventListener('click', (e) => {
-                if (e.target.closest('.edit-product-btn')) {
-                    const button = e.target.closest('.edit-product-btn');
-                    openEditProductModal(button.dataset.id);
-                }
-            });
+
+            // Mi Despensa
+            document.getElementById('view-toggle-grid').addEventListener('click', () => setPantryView('grid'));
+            document.getElementById('view-toggle-list').addEventListener('click', () => setPantryView('list'));
+            document.getElementById('pantry-search-input').addEventListener('input', renderPantry);
+            document.getElementById('pantry-filter-select').addEventListener('change', (e) => { currentPantryFilter = e.target.value; renderPantry(); });
+            document.getElementById('pantry-view-container').addEventListener('click', handlePantryActions);
+
+            // Edición de producto
             document.getElementById('edit-product-cancel-btn').addEventListener('click', () => hideModal('edit-product-modal'));
             document.getElementById('edit-product-save-btn').addEventListener('click', saveProductChanges);
-            document.getElementById('edit-category-principal').addEventListener('change', () => populateFamiliaDropdown(null, 'edit-category-familia', document.getElementById('edit-category-principal').value));
-            document.getElementById('edit-category-familia').addEventListener('change', () => populateSubfamiliaDropdown(null, 'edit-category-subfamilia', document.getElementById('edit-category-principal').value, document.getElementById('edit-category-familia').value));
             document.getElementById('change-image-btn').addEventListener('click', () => {
                 const productId = document.getElementById('edit-product-id').value;
                 openImageSelectionModal('edit', productId);
             });
+            document.getElementById('edit-category-principal').addEventListener('change', () => populateFamiliaDropdown(null, 'edit-category-familia', document.getElementById('edit-category-principal').value));
+            document.getElementById('edit-category-familia').addEventListener('change', () => populateSubfamiliaDropdown(null, 'edit-category-subfamilia', document.getElementById('edit-category-principal').value, document.getElementById('edit-category-familia').value));
 
-            // Image Selection Modal
+
+            // Selección de imagen
             document.getElementById('image-select-cancel-btn').addEventListener('click', () => hideModal('image-selection-modal'));
-            document.getElementById('image-select-confirm-btn').addEventListener('click', confirmImageSelection);
-            document.getElementById('generate-custom-image-btn').addEventListener('click', generateCustomImage);
+            document.getElementById('image-select-confirm-btn').addEventListener('click', () => confirmImageSelection());
+            document.getElementById('generate-custom-image-btn').addEventListener('click', generateAIGeneratedImage);
             document.getElementById('upload-image-input').addEventListener('change', handleImageUpload);
             document.getElementById('image-options-container').addEventListener('click', (e) => {
                 if (e.target.tagName === 'IMG') {
@@ -824,506 +505,48 @@
                     activeImageSelection.imageUrl = e.target.src;
                 }
             });
-        }
-
-        // --- RENDERIZADO DE COMPONENTES DE UI ---
-
-        function renderAuthContainer(user, profile) {
-            authContainer.innerHTML = `
-                <div class="flex items-center gap-4 cursor-pointer" id="user-profile-button">
-                    <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
-                </div>
-                <div id="user-menu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-50 origin-top-right">
-                    <div class="px-4 py-3">
-                        <p class="text-sm">Conectado como</p>
-                        <p class="font-medium text-gray-900 truncate">${user.displayName}</p>
-                    </div>
-                    <div class="border-t border-gray-100 px-4 py-3">
-                        <p class="text-sm font-medium text-gray-900">Tu ID de Usuario:</p>
-                        <p class="text-xs text-gray-500 break-all" id="user-id-display">${user.uid}</p>
-                        <button id="copy-user-id" class="text-indigo-600 text-xs mt-1 hover:underline">Copiar ID</button>
-                    </div>
-                    <div class="border-t border-gray-100">
-                        <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Cerrar sesión</a>
-                    </div>
-                </div>
-            `;
-            document.getElementById('logout-btn').addEventListener('click', handleSignOut);
-            document.getElementById('user-profile-button').addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.getElementById('user-menu').classList.toggle('hidden');
+            document.getElementById('ai-image-container').addEventListener('click', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    activeImageSelection.imageUrl = e.target.src;
+                }
             });
-            document.getElementById('copy-user-id').addEventListener('click', () => {
-                const textArea = document.createElement("textarea");
-                textArea.value = user.uid;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showMessage("Copiado", "Tu ID de usuario ha sido copiado.");
-            });
+
+            // Lista de la Compra
+            document.getElementById('add-item-btn').addEventListener('click', () => addShoppingListItem());
+            document.getElementById('add-item-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') addShoppingListItem(); });
+            document.getElementById('shopping-list').addEventListener('click', handleShoppingListActions);
+            document.getElementById('suggest-items-btn').addEventListener('click', generateShoppingSuggestions);
         }
         
+        // --- RENDER FUNCTIONS ---
+        function renderAuthContainer(user, profile) {
+            authContainer.innerHTML = `<div class="flex items-center gap-4 cursor-pointer" id="user-profile-button"><img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full"></div><div id="user-menu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-50 origin-top-right"><div class="px-4 py-3"><p class="text-sm">Conectado como</p><p class="font-medium text-gray-900 truncate">${user.displayName}</p></div><div class="border-t border-gray-100 px-4 py-3"><p class="text-sm font-medium text-gray-900">Tu ID de Usuario:</p><p class="text-xs text-gray-500 break-all" id="user-id-display">${user.uid}</p><button id="copy-user-id" class="text-indigo-600 text-xs mt-1 hover:underline">Copiar ID</button></div><div class="border-t border-gray-100"><a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Cerrar sesión</a></div></div>`;
+            document.getElementById('logout-btn').addEventListener('click', handleSignOut);
+            document.getElementById('user-profile-button').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('user-menu').classList.toggle('hidden'); });
+            document.getElementById('copy-user-id').addEventListener('click', () => {
+                navigator.clipboard.writeText(user.uid).then(() => showMessage("Copiado", "Tu ID de usuario ha sido copiado."));
+            });
+        }
+
         function renderHouseholdTab(profile) {
             const container = document.getElementById('household-management');
             const membersList = document.getElementById('household-members-list');
             membersList.innerHTML = ''; // Limpiar lista de miembros
 
             if (profile && profile.householdId) {
-                // Usuario está en un hogar
-                container.innerHTML = `
-                    <p class="text-gray-600 mb-2">Perteneces al hogar con ID:</p>
-                    <p class="font-mono bg-gray-100 p-2 rounded break-all mb-4">${profile.householdId}</p>
-                    <button id="leave-household-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Abandonar Hogar</button>
-                `;
+                container.innerHTML = `<p class="text-gray-600 mb-2">Perteneces al hogar con ID:</p><p class="font-mono bg-gray-100 p-2 rounded break-all mb-4">${profile.householdId}</p><button id="leave-household-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">Abandonar Hogar</button>`;
                 document.getElementById('leave-household-btn').addEventListener('click', leaveHousehold);
-                // Cargar y mostrar miembros
                 loadHouseholdMembers(profile.householdId);
             } else {
-                // Usuario no está en un hogar
-                container.innerHTML = `
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-2">Crear un nuevo hogar</h3>
-                        <p class="text-sm text-gray-600 mb-2">Crea un espacio compartido para gestionar los gastos familiares.</p>
-                        <div class="flex gap-2">
-                            <input type="text" id="household-name-input" placeholder="Nombre del hogar (Ej: Familia Pérez)" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5">
-                            <button id="create-household-btn" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700">Crear</button>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-2">Unirse a un hogar existente</h3>
-                        <p class="text-sm text-gray-600 mb-2">Si un familiar ya ha creado un hogar, introduce su ID aquí.</p>
-                        <div class="flex gap-2">
-                            <input type="text" id="join-household-id-input" placeholder="ID del hogar" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5">
-                            <button id="join-household-btn" class="bg-green-500 text-white px-4 rounded-lg hover:bg-green-600">Unirse</button>
-                        </div>
-                    </div>
-                `;
+                container.innerHTML = `<div class="mb-6"><h3 class="font-semibold mb-2">Crear un nuevo hogar</h3><p class="text-sm text-gray-600 mb-2">Crea un espacio compartido para gestionar los gastos familiares.</p><div class="flex gap-2"><input type="text" id="household-name-input" placeholder="Nombre del hogar (Ej: Familia Pérez)" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5"><button id="create-household-btn" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700">Crear</button></div></div><div><h3 class="font-semibold mb-2">Unirse a un hogar existente</h3><p class="text-sm text-gray-600 mb-2">Si un familiar ya ha creado un hogar, introduce su ID aquí.</p><div class="flex gap-2"><input type="text" id="join-household-id-input" placeholder="ID del hogar" class="flex-grow bg-gray-50 border border-gray-300 rounded-lg p-2.5"><button id="join-household-btn" class="bg-green-500 text-white px-4 rounded-lg hover:bg-green-600">Unirse</button></div></div>`;
                 document.getElementById('create-household-btn').addEventListener('click', createHousehold);
                 document.getElementById('join-household-btn').addEventListener('click', joinHousehold);
                 membersList.innerHTML = '<li class="text-gray-500">No perteneces a ningún hogar.</li>';
             }
         }
-
-        async function loadHouseholdMembers(householdId) {
-            const membersList = document.getElementById('household-members-list');
-            membersList.innerHTML = '<li>Cargando miembros...</li>';
-            const householdRef = doc(db, "households", householdId);
-            const householdDoc = await getDoc(householdRef);
-
-            if (householdDoc.exists()) {
-                const membersData = householdDoc.data().members; // { uid: { displayName, photoURL }, ... }
-                if (membersData && Object.keys(membersData).length > 0) {
-                    membersList.innerHTML = Object.values(membersData).map(member => `
-                        <li class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg">
-                            <img src="${member.photoURL}" alt="${member.displayName}" class="w-8 h-8 rounded-full">
-                            <span class="font-medium">${member.displayName}</span>
-                        </li>
-                    `).join('');
-                } else {
-                     membersList.innerHTML = '<li class="text-gray-500">No hay miembros en este hogar.</li>';
-                }
-            } else {
-                membersList.innerHTML = '<li class="text-red-500">Error: No se encontró el hogar.</li>';
-            }
-        }
-
-        // --- LÓGICA DE MANEJO DE DATOS (Firebase) ---
-
-        async function createHousehold() {
-            const nameInput = document.getElementById('household-name-input');
-            const householdName = nameInput.value.trim();
-            if (!householdName) {
-                showMessage("Error", "Por favor, introduce un nombre para el hogar.");
-                return;
-            }
-
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Creando hogar...";
-
-            try {
-                const batch = writeBatch(db);
-                const householdRef = doc(collection(db, "households"));
-                
-                batch.set(householdRef, {
-                    name: householdName,
-                    ownerId: currentUser.uid,
-                    createdAt: serverTimestamp(),
-                    members: {
-                        [currentUser.uid]: {
-                            displayName: currentUser.displayName,
-                            photoURL: currentUser.photoURL
-                        }
-                    }
-                });
-
-                const userRef = doc(db, "users", currentUser.uid);
-                batch.update(userRef, { householdId: householdRef.id });
-
-                await batch.commit();
-                showMessage("Éxito", `Hogar "${householdName}" creado correctamente.`);
-            } catch (error) {
-                console.error("Error creating household: ", error);
-                showMessage("Error", "No se pudo crear el hogar.");
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
-
-        async function joinHousehold() {
-            const idInput = document.getElementById('join-household-id-input');
-            const householdId = idInput.value.trim();
-            if (!householdId) {
-                showMessage("Error", "Por favor, introduce un ID de hogar válido.");
-                return;
-            }
-
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Uniéndote al hogar...";
-
-            try {
-                const householdRef = doc(db, "households", householdId);
-                const householdDoc = await getDoc(householdRef);
-
-                if (!householdDoc.exists()) {
-                    throw new Error("El hogar no existe.");
-                }
-
-                const batch = writeBatch(db);
-                const userRef = doc(db, "users", currentUser.uid);
-                
-                // Añadir miembro al hogar
-                const memberData = {
-                    [`members.${currentUser.uid}`]: {
-                        displayName: currentUser.displayName,
-                        photoURL: currentUser.photoURL
-                    }
-                };
-                batch.update(householdRef, memberData);
-
-                // Actualizar perfil de usuario
-                batch.update(userRef, { householdId: householdId });
-
-                await batch.commit();
-                showMessage("Éxito", "Te has unido al hogar correctamente.");
-            } catch (error) {
-                console.error("Error joining household: ", error);
-                showMessage("Error", `No se pudo unir al hogar. ${error.message}`);
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
         
-        async function leaveHousehold() {
-             if (!userProfile || !userProfile.householdId) return;
-
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Abandonando el hogar...";
-            
-            try {
-                const batch = writeBatch(db);
-                const householdRef = doc(db, "households", userProfile.householdId);
-                const userRef = doc(db, "users", currentUser.uid);
-
-                // Quitar al usuario del mapa de miembros del hogar
-                batch.update(householdRef, {
-                    [`members.${currentUser.uid}`]: deleteField()
-                });
-
-                // Quitar el householdId del perfil de usuario
-                batch.update(userRef, { householdId: null });
-
-                await batch.commit();
-                showMessage("Éxito", "Has abandonado el hogar.");
-            } catch (error) {
-                console.error("Error leaving household:", error);
-                showMessage("Error", "No se pudo abandonar el hogar.");
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
-
-        // --- FLUJO DE ANÁLISIS DE TICKET ---
-
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) {
-                previewFile(file);
-            }
-        }
-
-        function handleFileDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('bg-indigo-50');
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                previewFile(file);
-            }
-        }
-
-        function previewFile(file) {
-            currentFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('image-preview-container').innerHTML = `<img src="${e.target.result}" class="max-h-full max-w-full object-contain">`;
-            };
-            reader.readAsDataURL(file);
-            document.getElementById('process-ticket-btn').disabled = false;
-        }
-
-        async function processTicket() {
-            if (!currentFile) {
-                showMessage("Error", "Por favor, selecciona una imagen primero.");
-                return;
-            }
-            
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Analizando con IA...";
-
-            try {
-                const base64Image = (await fileToDataUrl(currentFile)).split(',')[1];
-                const prompt = buildAIPrompt();
-                
-                const requestBody = {
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            { inline_data: { mime_type: currentFile.type, data: base64Image } }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                    }
-                };
-
-                const apiKey = firebaseConfig.apiKey;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    const errorBody = await response.json();
-                    throw new Error(`Error de la API: ${errorBody.error.message}`);
-                }
-
-                const data = await response.json();
-                const jsonText = data.candidates[0].content.parts[0].text;
-                currentTicketData = JSON.parse(jsonText);
-                currentTicketData.productos.forEach(p => p.imageUrl = null); // Add imageUrl property
-                
-                showConfirmationModal(currentTicketData);
-
-            } catch (error) {
-                console.error("Error processing ticket:", error);
-                showMessage("Error de IA", `No se pudo procesar el ticket. ${error.message}`);
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
-
-        function showConfirmationModal(data) {
-            const content = document.getElementById('confirmation-content');
-            
-            const productRows = data.productos.map((p, index) => {
-                // --- VALIDATION LOGIC ---
-                if (!categorias[p.categoria_principal]) {
-                    p.categoria_principal = Object.keys(categorias)[0];
-                    p.familia = null;
-                    p.subfamilia = null;
-                }
-                if (!p.familia || !categorias[p.categoria_principal][p.familia]) {
-                    p.familia = Object.keys(categorias[p.categoria_principal])[0];
-                    p.subfamilia = null;
-                }
-                const subfamilias = categorias[p.categoria_principal][p.familia] || [];
-                if (!p.subfamilia || !subfamilias.includes(p.subfamilia)) {
-                    p.subfamilia = subfamilias[0] || null;
-                }
-                // --- END VALIDATION ---
-
-                const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
-                const familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
-                const subfamiliaOptions = subfamilias.map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
-
-                return `
-                <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
-                    <div class="col-span-1"><button class="edit-product-image-btn p-2 rounded-md hover:bg-gray-200" data-index="${index}" id="product-image-btn-${index}"><i class="fas fa-image text-gray-500"></i></button></div>
-                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly></div>
-                    <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
-                    <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
-                    <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
-                    <div class="col-span-2"><select class="confirm-select confirm-cat-familia" id="confirm-cat-familia-${index}" data-index="${index}">${familiaOptions}</select></div>
-                    <div class="col-span-1"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
-                    <div class="col-span-1 text-center"><button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button></div>
-                </div>`;
-            }).join('');
-
-            content.innerHTML = `
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Supermercado</label>
-                        <input type="text" id="confirm-supermarket-name" value="${data.supermercado}" class="confirm-input mt-1">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Dirección</label>
-                        <input type="text" id="confirm-supermarket-address" value="${data.direccion_supermercado || ''}" placeholder="Añadir dirección..." class="confirm-input mt-1">
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2">
-                        <div class="col-span-1">Img</div>
-                        <div class="col-span-3">Nombre</div>
-                        <div class="col-span-1">Cant.</div>
-                        <div class="col-span-1">Precio</div>
-                        <div class="col-span-2">Categoría</div>
-                        <div class="col-span-2">Familia</div>
-                        <div class="col-span-1">Subflia.</div>
-                        <div class="col-span-1"></div>
-                    </div>
-                    ${productRows}
-                </div>
-            `;
-            
-            updateConfirmationTotal();
-            showModal('confirmation-modal');
-        }
-        
-        function updateConfirmationTotal() {
-            let total = 0;
-            document.querySelectorAll('.confirm-price-input').forEach(input => {
-                if(input.closest('.product-row')) { // Only count rows that haven't been deleted
-                    total += parseFloat(input.value) || 0;
-                }
-            });
-            document.getElementById('confirmation-total').textContent = total.toFixed(2);
-        }
-
-        function updateTicketDataFromModal() {
-            const newProductos = [];
-            document.querySelectorAll('.product-row').forEach((row, index) => {
-                const originalIndex = row.id.split('-')[2];
-                const newProduct = {
-                    nombre: row.querySelector('.confirm-name-input').value,
-                    cantidad: parseInt(row.querySelector('.confirm-qty-input').value, 10),
-                    precio: parseFloat(row.querySelector('.confirm-price-input').value),
-                    categoria_principal: row.querySelector('.confirm-cat-principal').value,
-                    familia: row.querySelector('.confirm-cat-familia').value,
-                    subfamilia: row.querySelector('.confirm-cat-subfamilia').value,
-                    imageUrl: currentTicketData.productos[originalIndex].imageUrl // Preserve the image
-                };
-                newProductos.push(newProduct);
-            });
-            currentTicketData.productos = newProductos;
-            currentTicketData.total = newProductos.reduce((sum, p) => sum + p.precio, 0);
-            currentTicketData.supermercado = document.getElementById('confirm-supermarket-name').value;
-            currentTicketData.direccion_supermercado = document.getElementById('confirm-supermarket-address').value;
-        }
-
-
-        function showAssignExpenseModal() {
-            hideModal('confirmation-modal');
-            const container = document.getElementById('assign-expense-content');
-            
-            if (!userProfile.householdId) {
-                // Si no está en un hogar, todos los gastos son personales. Guardar directamente.
-                saveTicketData();
-                return;
-            }
-
-            container.innerHTML = `
-                <p class="mb-4 text-sm">Selecciona para cada producto si es un gasto 'Personal' o para el 'Hogar'.</p>
-                <div class="space-y-3">
-                    ${currentTicketData.productos.map((p, index) => `
-                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                            <span class="truncate pr-4">${p.nombre}</span>
-                            <div class="flex-shrink-0">
-                                <input type="radio" id="personal-${index}" name="assign-${index}" value="personal" class="form-radio text-indigo-600" checked>
-                                <label for="personal-${index}" class="ml-1 mr-3">Personal</label>
-                                <input type="radio" id="hogar-${index}" name="assign-${index}" value="hogar" class="form-radio text-green-600">
-                                <label for="hogar-${index}" class="ml-1">Hogar</label>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            showModal('assign-expense-modal');
-        }
-
-        async function saveTicketData() {
-            hideModal('assign-expense-modal');
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Guardando compra...";
-
-            const sanitizeForDocId = (text) => {
-                if (!text || typeof text !== 'string') return 'producto_desconocido';
-                return text.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-            }
-
-            // Asignar gastos
-            if (userProfile.householdId) {
-                currentTicketData.productos.forEach((prod, index) => {
-                    const assignment = document.querySelector(`input[name="assign-${index}"]:checked`).value;
-                    prod.assignedTo = assignment === 'hogar' ? userProfile.householdId : 'personal';
-                });
-            } else {
-                currentTicketData.productos.forEach(prod => prod.assignedTo = 'personal');
-            }
-
-            // Determinar a quién pertenece el ticket principal
-            const householdItemsCount = currentTicketData.productos.filter(p => p.assignedTo !== 'personal').length;
-            const ticketHouseholdId = householdItemsCount > 0 ? userProfile.householdId : null;
-
-            try {
-                const batch = writeBatch(db);
-                const ticketRef = doc(collection(db, "tickets"));
-
-                batch.set(ticketRef, {
-                    userId: currentUser.uid,
-                    householdId: ticketHouseholdId,
-                    supermercado: currentTicketData.supermercado,
-                    direccion_supermercado: currentTicketData.direccion_supermercado || null,
-                    fecha: currentTicketData.fecha,
-                    total: currentTicketData.total,
-                    productos: currentTicketData.productos,
-                    createdAt: serverTimestamp()
-                });
-
-                // Actualizar la colección de productos únicos
-                for (const product of currentTicketData.productos) {
-                    const sanitizedProductName = sanitizeForDocId(product.nombre);
-                    const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
-                    const productRef = doc(db, "products", productDocId);
-                    
-                    batch.set(productRef, {
-                        userId: currentUser.uid,
-                        nombre: product.nombre, // Store the original name
-                        categoria_principal: product.categoria_principal,
-                        familia: product.familia,
-                        subfamilia: product.subfamilia,
-                        imageUrl: product.imageUrl || null,
-                        lastUpdate: serverTimestamp()
-                    }, { merge: true });
-                }
-
-                await batch.commit();
-                showMessage("Éxito", "La compra se ha guardado correctamente.");
-                resetTicketAnalysis();
-
-            } catch (error) {
-                console.error("Error saving ticket data:", error);
-                showMessage("Error", `No se pudo guardar la compra. Detalles: ${error.message}`);
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
-
-        // --- LÓGICA DEL DASHBOARD ---
-
         function renderDashboard() {
             if (!currentUser) return;
             const year = document.getElementById('filter-year').value;
@@ -1334,16 +557,10 @@
                 const purchaseDate = new Date(p.fecha);
                 const yearMatch = year === 'all' || purchaseDate.getFullYear() == year;
                 const monthMatch = month === 'all' || (purchaseDate.getMonth() + 1) == month;
-                
                 let contextMatch = false;
-                if (context === 'all') {
-                    contextMatch = true;
-                } else if (context === 'personal') {
-                    contextMatch = p.userId === currentUser.uid && !p.householdId;
-                } else if (context === 'household') {
-                    contextMatch = p.householdId === userProfile.householdId;
-                }
-
+                if (context === 'all') contextMatch = true;
+                else if (context === 'personal') contextMatch = p.userId === currentUser.uid && !p.householdId;
+                else if (context === 'household') contextMatch = p.householdId === userProfile.householdId;
                 return yearMatch && monthMatch && contextMatch;
             });
             
@@ -1353,167 +570,30 @@
                 return supermarketMatch && categoryMatch;
             });
             
-            // Renderizar componentes del dashboard
             renderSummaryCards();
             renderSupermarketChart();
             renderCategoryChart();
             renderPurchasesHistory();
         }
-        
-        // --- HELPERS Y UTILIDADES ---
-        
-        function buildAIPrompt() {
-            // Este prompt es crucial. Debe ser muy detallado.
-            return `
-                Analiza la imagen de este ticket de supermercado. Extrae la siguiente información en un formato JSON estricto. No incluyas nada fuera del objeto JSON.
-                
-                El JSON debe tener la siguiente estructura:
-                {
-                  "supermercado": "string", "direccion_supermercado": "string", "fecha": "string",
-                  "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ],
-                  "total": number
-                }
 
-                Reglas de categorización (MUY IMPORTANTE):
-                - Asigna a cada producto una categoría de los 3 niveles: categoria_principal, familia y subfamilia.
-                - Utiliza ÚNICA Y EXCLUSIVAMENTE las siguientes categorías. No inventes ninguna.
-                - Si un producto no encaja, usa 'OTROS GASTOS' -> 'Varios' -> 'Sin especificar'.
-
-                Jerarquía de Categorías Permitidas:
-                - 🛒 ALIMENTOS Y BEBIDAS:
-                  - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas]
-                  - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
-                  - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado]
-                  - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos]
-                  - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"]
-                  - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"]
-                  - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"]
-                  - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"]
-                  - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"]
-                  - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"]
-                  - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"]
-                  - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
-                - 🏠 HOGAR Y LIMPIEZA:
-                  - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"]
-                  - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"]
-                  - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
-                - 🧴 HIGIENE Y CUIDADO PERSONAL:
-                  - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"]
-                  - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"]
-                  - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
-                - 🐾 MASCOTAS:
-                  - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"]
-                  - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
-                - 💸 OTROS GASTOS:
-                  - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
-
-                Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.
-            `;
-        }
-
-        function fileToDataUrl(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // --- INICIALIZACIÓN DE LA APP ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-        });
-        
-        function showMessage(title, message) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            showModal('message-modal');
-        }
-
-        function showModal(id) {
-            const modal = document.getElementById(id);
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        }
-
-        function hideModal(id) {
-            const modal = document.getElementById(id);
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-        
-        function showWelcomeModal() {
-            showModal('welcome-modal');
-        }
-
-        function resetAppState() {
-            allPurchases = [];
-            allUserProducts = [];
-            currentFilteredPurchases = [];
-            selectedPurchases.clear();
-            if (supermarketChart) supermarketChart.destroy();
-            if (categoryChart) categoryChart.destroy();
-            resetTicketAnalysis();
-            document.getElementById('purchases-history').innerHTML = '';
-            document.getElementById('products-table').innerHTML = '';
-        }
-        
-        function resetTicketAnalysis() {
-            currentFile = null;
-            currentTicketData = null;
-            document.getElementById('file-upload').value = '';
-            document.getElementById('image-preview-container').innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>';
-            document.getElementById('process-ticket-btn').disabled = true;
-        }
-
-        function populateFilters() {
-            const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a, b) => b - a);
-            const yearSelect = document.getElementById('filter-year');
-            yearSelect.innerHTML = '<option value="all">Todos los Años</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
-            
-            const monthSelect = document.getElementById('filter-month');
-            const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-            monthSelect.innerHTML = '<option value="all">Todos los Meses</option>' + months.map((m, i) => `<option value="${i+1}">${m}</option>`).join('');
-        }
-        
-        function updateContextFilter(profile) {
-            const contextSelect = document.getElementById('context-filter');
-            let options = '<option value="personal">Gastos Personales</option>';
-            if (profile && profile.householdId) {
-                options += `<option value="household">Gastos del Hogar</option>`;
-            }
-            options += '<option value="all">Ver Todo</option>';
-            contextSelect.innerHTML = options;
-        }
-        
         function renderSummaryCards() {
             const totalExpense = currentFilteredPurchases.reduce((sum, p) => sum + p.total, 0);
             document.getElementById('total-expense').textContent = `${totalExpense.toFixed(2)} €`;
             document.getElementById('total-purchases').textContent = currentFilteredPurchases.length;
             
-            // Monthly comparison logic
             const year = document.getElementById('filter-year').value;
             const month = document.getElementById('filter-month').value;
             const comparisonDiv = document.getElementById('monthly-comparison');
 
             if (year !== 'all' && month !== 'all') {
-                const currentMonth = parseInt(month);
-                const currentYear = parseInt(year);
-
-                let prevMonth = currentMonth - 1;
-                let prevYear = currentYear;
-                if (prevMonth === 0) {
-                    prevMonth = 12;
-                    prevYear--;
-                }
-
+                const currentMonth = parseInt(month), currentYear = parseInt(year);
+                let prevMonth = currentMonth - 1, prevYear = currentYear;
+                if (prevMonth === 0) { prevMonth = 12; prevYear--; }
                 const prevMonthPurchases = allPurchases.filter(p => {
                     const d = new Date(p.fecha);
                     return d.getFullYear() === prevYear && (d.getMonth() + 1) === prevMonth;
                 });
                 const prevMonthTotal = prevMonthPurchases.reduce((sum, p) => sum + p.total, 0);
-
                 if (prevMonthTotal > 0) {
                     const percentageChange = ((totalExpense - prevMonthTotal) / prevMonthTotal) * 100;
                     const color = percentageChange > 0 ? 'text-red-500' : 'text-green-500';
@@ -1521,8 +601,7 @@
                     comparisonDiv.innerHTML = `<span class="${color}">${icon} ${percentageChange.toFixed(1)}%</span>`;
                 } else if (totalExpense > 0) {
                     comparisonDiv.innerHTML = `<span class="text-green-500">--</span>`;
-                }
-                 else {
+                } else {
                     comparisonDiv.textContent = 'N/A';
                 }
             } else {
@@ -1533,206 +612,15 @@
         function renderPurchasesHistory() {
             const tbody = document.getElementById('purchases-history');
             if (currentFilteredPurchases.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No hay compras que mostrar para los filtros seleccionados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No hay compras que mostrar.</td></tr>';
                 return;
             }
-
             tbody.innerHTML = currentFilteredPurchases
                 .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-                .map(p => `
-                <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="w-4 p-4">
-                        <input type="checkbox" data-id="${p.id}" class="purchase-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                    </td>
-                    <td class="px-6 py-4">${p.fecha}</td>
-                    <td class="px-6 py-4 font-medium text-gray-900">${p.supermercado}</td>
-                    <td class="px-6 py-4">${p.total.toFixed(2)} €</td>
-                    <td class="px-6 py-4">${p.householdId ? 'Hogar' : 'Personal'}</td>
-                </tr>
-            `).join('');
+                .map(p => `<tr class="bg-white border-b hover:bg-gray-50"><td class="w-4 p-4"><input type="checkbox" data-id="${p.id}" class="purchase-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"></td><td class="px-6 py-4">${p.fecha}</td><td class="px-6 py-4 font-medium text-gray-900">${p.supermercado}</td><td class="px-6 py-4">${p.total.toFixed(2)} €</td><td class="px-6 py-4">${p.householdId ? 'Hogar' : 'Personal'}</td></tr>`).join('');
             
-            // Add event listeners to new checkboxes
-            document.querySelectorAll('.purchase-checkbox').forEach(cb => {
-                cb.addEventListener('change', handlePurchaseSelect);
-            });
+            document.querySelectorAll('.purchase-checkbox').forEach(cb => cb.addEventListener('change', handlePurchaseSelect));
         }
-        
-        function renderProductsTable() {
-            const tbody = document.getElementById('products-table');
-            if (allUserProducts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Aún no has escaneado ningún producto.</td></tr>';
-                return;
-            }
-
-            const productCounts = allPurchases.flatMap(p => p.productos).reduce((acc, prod) => {
-                const key = prod.nombre.toLowerCase();
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
-
-            tbody.innerHTML = allUserProducts
-                .sort((a, b) => a.nombre.localeCompare(b.nombre)) // Sort alphabetically
-                .map(p => {
-                    const count = productCounts[p.nombre.toLowerCase()] || 0;
-                    const imageHtml = p.imageUrl 
-                        ? `<img src="${p.imageUrl}" alt="${p.nombre}" class="w-12 h-12 object-cover rounded-md">`
-                        : `<div class="product-image-placeholder flex items-center justify-center rounded-md"><i class="fas fa-camera"></i></div>`;
-
-                    return `
-                    <tr class="bg-white border-b hover:bg-gray-50">
-                        <td class="px-6 py-4">${imageHtml}</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
-                        <td class="px-6 py-4">${p.categoria_principal}</td>
-                        <td class="px-6 py-4">${p.familia}</td>
-                        <td class="px-6 py-4 text-center">${count}</td>
-                        <td class="px-6 py-4 text-center">
-                            <button class="edit-product-btn text-indigo-600 hover:text-indigo-900" data-id="${p.id}">
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `}).join('');
-        }
-
-        function openEditProductModal(productId) {
-            const product = allUserProducts.find(p => p.id === productId);
-            if (!product) return;
-
-            document.getElementById('edit-product-id').value = product.id;
-            document.getElementById('edit-product-original-name').value = product.nombre;
-            document.getElementById('edit-product-name').value = product.nombre;
-            
-            const previewContainer = document.getElementById('edit-image-preview');
-            if (product.imageUrl) {
-                previewContainer.innerHTML = `<img src="${product.imageUrl}" alt="${product.nombre}" class="w-40 h-40 object-cover rounded-lg">`;
-            } else {
-                previewContainer.innerHTML = `<div class="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>`;
-            }
-
-            populatePrincipalDropdown('edit-category-principal', product.categoria_principal);
-            populateFamiliaDropdown(product.familia, 'edit-category-familia', product.categoria_principal);
-            populateSubfamiliaDropdown(product.subfamilia, 'edit-category-subfamilia', product.categoria_principal, product.familia);
-
-            showModal('edit-product-modal');
-        }
-
-        async function generateImageWithPrompt(prompt, container) {
-            container.innerHTML = `<div class="loader"></div>`;
-            try {
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { responseModalities: ['IMAGE'] },
-                };
-                const apiKey = firebaseConfig.apiKey;
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorBody = await response.json();
-                    throw new Error(errorBody.error?.message || 'Unknown API error');
-                }
-
-                const result = await response.json();
-                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                
-                if (base64Data) {
-                    return `data:image/png;base64,${base64Data}`;
-                } else {
-                    throw new Error("No se recibió ninguna imagen de la API.");
-                }
-
-            } catch (error) {
-                console.error("Error generating image:", error);
-                showMessage("Error de IA", `No se pudo generar la imagen. ${error.message}`);
-                container.innerHTML = `<div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-exclamation-triangle"></i></div>`;
-                return null;
-            }
-        }
-
-
-        function populatePrincipalDropdown(selectId, selectedValue) {
-            const select = document.getElementById(selectId);
-            select.innerHTML = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`).join('');
-        }
-
-        function populateFamiliaDropdown(selectedValue, selectId, principalValue) {
-            const select = document.getElementById(selectId);
-            if (categorias[principalValue]) {
-                select.innerHTML = Object.keys(categorias[principalValue]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join('');
-            } else {
-                select.innerHTML = '';
-            }
-            populateSubfamiliaDropdown(null, selectId.replace('familia', 'subfamilia'), principalValue, select.value);
-        }
-
-        function populateSubfamiliaDropdown(selectedValue, selectId, principalValue, familiaValue) {
-            const select = document.getElementById(selectId);
-            if (categorias[principalValue] && categorias[principalValue][familiaValue]) {
-                select.innerHTML = categorias[principalValue][familiaValue].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join('');
-            } else {
-                select.innerHTML = '';
-            }
-        }
-
-        async function saveProductChanges() {
-            const productId = document.getElementById('edit-product-id').value;
-            const originalName = document.getElementById('edit-product-original-name').value;
-            const newName = document.getElementById('edit-product-name').value;
-            const newCat = document.getElementById('edit-category-principal').value;
-            const newFam = document.getElementById('edit-category-familia').value;
-            const newSub = document.getElementById('edit-category-subfamilia').value;
-            const newImageUrl = document.querySelector('#edit-image-preview img')?.src || null;
-
-            hideModal('edit-product-modal');
-            processingOverlay.classList.remove('hidden');
-            processingText.textContent = "Actualizando producto y tickets...";
-
-            try {
-                const batch = writeBatch(db);
-                
-                // 1. Update the product document itself
-                const productRef = doc(db, "products", productId);
-                batch.update(productRef, {
-                    nombre: newName,
-                    categoria_principal: newCat,
-                    familia: newFam,
-                    subfamilia: newSub,
-                    imageUrl: newImageUrl
-                });
-
-                // 2. Update all tickets containing this product
-                for (const ticket of allPurchases) {
-                    let ticketModified = false;
-                    const updatedProductos = ticket.productos.map(p => {
-                        if (p.nombre === originalName) {
-                            ticketModified = true;
-                            return { ...p, nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub };
-                        }
-                        return p;
-                    });
-
-                    if (ticketModified) {
-                        const ticketRef = doc(db, "tickets", ticket.id);
-                        batch.update(ticketRef, { productos: updatedProductos });
-                    }
-                }
-
-                await batch.commit();
-                showMessage("Éxito", "El producto y todas las compras asociadas han sido actualizados.");
-
-            } catch (error) {
-                console.error("Error updating product:", error);
-                showMessage("Error", `No se pudieron guardar los cambios. ${error.message}`);
-            } finally {
-                processingOverlay.classList.add('hidden');
-            }
-        }
-
 
         function renderSupermarketChart() {
             const ctx = document.getElementById('supermarket-chart').getContext('2d');
@@ -1750,197 +638,319 @@
                     }, {});
             }
 
-
             if (supermarketChart) supermarketChart.destroy();
             supermarketChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        data: Object.values(data),
-                        backgroundColor: chartColors,
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { position: 'bottom' }, },
-                    onClick: (evt, elements) => {
-                        if (elements.length > 0) {
-                            const clickedLabel = supermarketChart.data.labels[elements[0].index];
-                            chartFilter = { type: 'supermarket', value: clickedLabel };
-                            renderDashboard();
-                        }
+                data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: chartColors }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const clickedLabel = supermarketChart.data.labels[elements[0].index];
+                        chartFilter = { type: 'supermarket', value: clickedLabel };
+                        renderDashboard();
                     }
-                }
+                }}
             });
         }
         
         function renderCategoryChart() {
-             const ctx = document.getElementById('category-chart').getContext('2d');
+            const ctx = document.getElementById('category-chart').getContext('2d');
             const data = {};
-            
             let purchasesForChart = currentFilteredPurchases;
             if (chartFilter.type === 'supermarket') {
                 purchasesForChart = currentFilteredPurchases.filter(p => p.supermercado === chartFilter.value);
             }
-
             purchasesForChart.forEach(purchase => {
                 purchase.productos.forEach(product => {
                     let key;
-                    if (categoryChartLevel === 1) {
-                        key = product.categoria_principal;
-                    } else if (categoryChartLevel === 2 && product.categoria_principal === selectedPrincipal) {
-                        key = product.familia;
-                    } else if (categoryChartLevel === 3 && product.categoria_principal === selectedPrincipal && product.familia === selectedFamilia) {
-                        key = product.subfamilia;
-                    }
-
-                    if (key) {
-                        data[key] = (data[key] || 0) + product.precio;
-                    }
+                    if (categoryChartLevel === 1) key = product.categoria_principal;
+                    else if (categoryChartLevel === 2 && product.categoria_principal === selectedPrincipal) key = product.familia;
+                    else if (categoryChartLevel === 3 && product.categoria_principal === selectedPrincipal && product.familia === selectedFamilia) key = product.subfamilia;
+                    if (key) data[key] = (data[key] || 0) + product.precio;
                 });
             });
 
             if (categoryChart) categoryChart.destroy();
             categoryChart = new Chart(ctx, {
                 type: 'pie',
-                data: {
-                    labels: Object.keys(data),
-                    datasets: [{
-                        data: Object.values(data),
-                        backgroundColor: chartColors,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' }, },
-                    onClick: handleCategoryChartClick
-                }
+                data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: chartColors }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, onClick: handleCategoryChartClick }
             });
         }
         
-        function resetChartFilter() {
-            chartFilter = { type: null, value: null };
-            renderDashboard();
-        }
-
-        function handleCategoryChartClick(evt, elements) {
-            if (elements.length > 0) {
-                const clickedLabel = categoryChart.data.labels[elements[0].index];
-                if (categoryChartLevel === 1) {
-                    chartFilter = { type: 'category', value: clickedLabel };
-                    
-                    selectedPrincipal = clickedLabel;
-                    categoryChartLevel = 2;
-                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
-                    document.getElementById('category-chart-back-btn').classList.remove('hidden');
-                    renderCategoryChart();
-                } else if (categoryChartLevel === 2) {
-                    selectedFamilia = clickedLabel;
-                    categoryChartLevel = 3;
-                    document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedFamilia}`;
-                    renderCategoryChart();
-                }
-            }
-        }
-
-        function handleCategoryChartBack() {
-            if (categoryChartLevel === 3) {
-                categoryChartLevel = 2;
-                 document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`;
-            } else if (categoryChartLevel === 2) {
-                categoryChartLevel = 1;
-                document.getElementById('category-chart-title').textContent = 'Gasto por Categoría Principal';
-                document.getElementById('category-chart-back-btn').classList.add('hidden');
-                resetChartFilter();
-            }
-            renderCategoryChart();
-        }
-        
-        function handleSelectAll(e) {
-            const isChecked = e.target.checked;
-            document.querySelectorAll('.purchase-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-                const id = cb.dataset.id;
-                if (isChecked) {
-                    selectedPurchases.add(id);
-                } else {
-                    selectedPurchases.delete(id);
-                }
-            });
-            updateDeleteButtonState();
-        }
-
-        function handlePurchaseSelect(e) {
-            const id = e.target.dataset.id;
-            if (e.target.checked) {
-                selectedPurchases.add(id);
-            } else {
-                selectedPurchases.delete(id);
-            }
-            updateDeleteButtonState();
-        }
-        
-        function updateDeleteButtonState() {
-            document.getElementById('delete-selected-btn').disabled = selectedPurchases.size === 0;
-        }
-
-        function confirmDeleteSelected() {
-            const modal = document.getElementById('delete-confirm-modal');
-            document.getElementById('delete-modal-title').textContent = 'Eliminar Compras';
-            document.getElementById('delete-modal-message').textContent = `¿Estás seguro de que quieres eliminar ${selectedPurchases.size} compra(s)? Esta acción no se puede deshacer.`;
-            showModal('delete-confirm-modal');
-
-            document.getElementById('delete-cancel-btn').onclick = () => hideModal('delete-confirm-modal');
-            document.getElementById('delete-confirm-btn').onclick = async () => {
-                hideModal('delete-confirm-modal');
-                processingOverlay.classList.remove('hidden');
-                processingText.textContent = 'Eliminando...';
-                try {
-                    const batch = writeBatch(db);
-                    selectedPurchases.forEach(id => {
-                        batch.delete(doc(db, 'tickets', id));
-                    });
-                    await batch.commit();
-                    showMessage('Éxito', 'Las compras seleccionadas han sido eliminadas.');
-                    selectedPurchases.clear();
-                    updateDeleteButtonState();
-                } catch (error) {
-                    console.error("Error deleting purchases:", error);
-                    showMessage('Error', 'No se pudieron eliminar las compras.');
-                } finally {
-                    processingOverlay.classList.add('hidden');
-
-                }
+        // --- TICKET PROCESSING & SAVING ---
+        function previewFile(file) {
+            if (!file) return;
+            currentFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('image-preview-container').innerHTML = `<img src="${e.target.result}" class="max-h-full max-w-full object-contain">`;
             };
+            reader.readAsDataURL(file);
+            document.getElementById('process-ticket-btn').disabled = false;
         }
 
-        function handleAuthError(error) {
-            if (error.code === 'auth/unauthorized-domain') {
-                showMessage(
-                    "Error de Configuración", 
-                    "El dominio actual no está autorizado. Ve a tu proyecto de Firebase -> Authentication -> Sign-in method -> Google y añade el dominio desde el que ejecutas la app a la lista de 'Dominios autorizados'."
-                );
+        async function processTicket() {
+            if (!currentFile) return showMessage("Error", "Por favor, selecciona una imagen primero.");
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Analizando con IA...";
+            try {
+                const base64Image = (await fileToDataUrl(currentFile)).split(',')[1];
+                const prompt = buildAIPrompt();
+                const requestBody = {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: currentFile.type, data: base64Image } }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+                const apiKey = firebaseConfig.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(`Error de la API: ${errorBody.error.message}`);
+                }
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text;
+                currentTicketData = JSON.parse(jsonText);
+                currentTicketData.productos.forEach(p => p.imageUrl = null);
+                showConfirmationModal(currentTicketData);
+            } catch (error) {
+                console.error("Error processing ticket:", error);
+                showMessage("Error de IA", `No se pudo procesar el ticket. ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
+        function showConfirmationModal(data) {
+            const content = document.getElementById('confirmation-content');
+            const productRows = data.productos.map((p, index) => {
+                if (!categorias[p.categoria_principal]) { p.categoria_principal = Object.keys(categorias)[0]; p.familia = null; p.subfamilia = null; }
+                if (!p.familia || !categorias[p.categoria_principal][p.familia]) { p.familia = Object.keys(categorias[p.categoria_principal])[0]; p.subfamilia = null; }
+                const subfamilias = categorias[p.categoria_principal][p.familia] || [];
+                if (!p.subfamilia || !subfamilias.includes(p.subfamilia)) { p.subfamilia = subfamilias[0] || null; }
+                const principalOptions = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === p.categoria_principal ? 'selected' : ''}>${cat}</option>`).join('');
+                const familiaOptions = Object.keys(categorias[p.categoria_principal]).map(fam => `<option value="${fam}" ${fam === p.familia ? 'selected' : ''}>${fam}</option>`).join('');
+                const subfamiliaOptions = subfamilias.map(sub => `<option value="${sub}" ${sub === p.subfamilia ? 'selected' : ''}>${sub}</option>`).join('');
+                return `<div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
+                    <div class="col-span-1"><button class="edit-product-image-btn p-2 rounded-md hover:bg-gray-200" data-index="${index}" id="product-image-btn-${index}"><i class="fas fa-image text-gray-500"></i></button></div>
+                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly></div>
+                    <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
+                    <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
+                    <div class="col-span-2"><select class="confirm-select confirm-cat-familia" id="confirm-cat-familia-${index}" data-index="${index}">${familiaOptions}</select></div>
+                    <div class="col-span-1"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
+                    <div class="col-span-1 text-center"><button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button></div>
+                </div>`;
+            }).join('');
+            content.innerHTML = `<div class="grid grid-cols-2 gap-4 mb-4"><div><label class="block text-sm font-medium text-gray-700">Supermercado</label><input type="text" id="confirm-supermarket-name" value="${data.supermercado}" class="confirm-input mt-1"></div><div><label class="block text-sm font-medium text-gray-700">Dirección</label><input type="text" id="confirm-supermarket-address" value="${data.direccion_supermercado || ''}" placeholder="Añadir dirección..." class="confirm-input mt-1"></div></div><div class="space-y-2"><div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2"><div class="col-span-1">Img</div><div class="col-span-3">Nombre</div><div class="col-span-1">Cant.</div><div class="col-span-1">Precio</div><div class="col-span-2">Categoría</div><div class="col-span-2">Familia</div><div class="col-span-1">Subflia.</div><div class="col-span-1"></div></div>${productRows}</div>`;
+            updateConfirmationTotal();
+            showModal('confirmation-modal');
+        }
+
+        function updateConfirmationTotal() {
+            let total = 0;
+            document.querySelectorAll('.confirm-price-input').forEach(input => {
+                if(input.closest('.product-row')) total += parseFloat(input.value) || 0;
+            });
+            document.getElementById('confirmation-total').textContent = total.toFixed(2);
+        }
+
+        function updateTicketDataFromModal() {
+            const newProductos = [];
+            document.querySelectorAll('.product-row').forEach((row) => {
+                const originalIndex = row.id.split('-')[2];
+                newProductos.push({
+                    nombre: row.querySelector('.confirm-name-input').value,
+                    cantidad: parseInt(row.querySelector('.confirm-qty-input').value, 10),
+                    precio: parseFloat(row.querySelector('.confirm-price-input').value),
+                    categoria_principal: row.querySelector('.confirm-cat-principal').value,
+                    familia: row.querySelector('.confirm-cat-familia').value,
+                    subfamilia: row.querySelector('.confirm-cat-subfamilia').value,
+                    imageUrl: currentTicketData.productos[originalIndex].imageUrl
+                });
+            });
+            currentTicketData.productos = newProductos;
+            currentTicketData.total = newProductos.reduce((sum, p) => sum + p.precio, 0);
+            currentTicketData.supermercado = document.getElementById('confirm-supermarket-name').value;
+            currentTicketData.direccion_supermercado = document.getElementById('confirm-supermarket-address').value;
+        }
+
+        function showAssignExpenseModal() {
+            hideModal('confirmation-modal');
+            if (!userProfile.householdId) {
+                saveTicketData();
+                return;
+            }
+            const container = document.getElementById('assign-expense-content');
+            container.innerHTML = `<p class="mb-4 text-sm">Selecciona para cada producto si es un gasto 'Personal' o para el 'Hogar'.</p><div class="space-y-3">${currentTicketData.productos.map((p, index) => `<div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><span class="truncate pr-4">${p.nombre}</span><div class="flex-shrink-0"><input type="radio" id="personal-${index}" name="assign-${index}" value="personal" class="form-radio text-indigo-600" checked><label for="personal-${index}" class="ml-1 mr-3">Personal</label><input type="radio" id="hogar-${index}" name="assign-${index}" value="hogar" class="form-radio text-green-600"><label for="hogar-${index}" class="ml-1">Hogar</label></div></div>`).join('')}</div>`;
+            showModal('assign-expense-modal');
+        }
+
+        async function saveTicketData() {
+            hideModal('assign-expense-modal');
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = "Guardando compra...";
+
+            if (userProfile.householdId) {
+                currentTicketData.productos.forEach((prod, index) => {
+                    const assignment = document.querySelector(`input[name="assign-${index}"]:checked`).value;
+                    prod.assignedTo = assignment === 'hogar' ? userProfile.householdId : 'personal';
+                });
             } else {
-                console.error("Error de autenticación:", error);
-                showMessage("Error de Autenticación", `No se pudo iniciar sesión. Error: ${error.message}`);
+                currentTicketData.productos.forEach(prod => prod.assignedTo = 'personal');
+            }
+
+            const householdItemsCount = currentTicketData.productos.filter(p => p.assignedTo !== 'personal').length;
+            const ticketHouseholdId = householdItemsCount > 0 ? userProfile.householdId : null;
+
+            try {
+                const batch = writeBatch(db);
+                const ticketRef = doc(collection(db, "tickets"));
+                batch.set(ticketRef, {
+                    userId: currentUser.uid, householdId: ticketHouseholdId,
+                    supermercado: currentTicketData.supermercado,
+                    direccion_supermercado: currentTicketData.direccion_supermercado || null,
+                    fecha: currentTicketData.fecha, total: currentTicketData.total,
+                    productos: currentTicketData.productos, createdAt: serverTimestamp()
+                });
+
+                for (const product of currentTicketData.productos) {
+                    const sanitizedProductName = product.nombre.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+                    const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
+                    const productRef = doc(db, "products", productDocId);
+                    batch.set(productRef, {
+                        userId: currentUser.uid, nombre: product.nombre,
+                        categoria_principal: product.categoria_principal, familia: product.familia, subfamilia: product.subfamilia,
+                        imageUrl: product.imageUrl || null, pantryStatus: 'in_stock',
+                        purchaseDate: currentTicketData.fecha, lastUpdate: serverTimestamp()
+                    }, { merge: true });
+                }
+                await batch.commit();
+                showMessage("Éxito", "La compra se ha guardado correctamente.");
+                resetTicketAnalysis();
+            } catch (error) {
+                console.error("Error saving ticket data:", error);
+                showMessage("Error", `No se pudo guardar la compra. Detalles: ${error.message}`);
+            } finally {
+                processingOverlay.classList.add('hidden');
             }
         }
         
-        window.addEventListener('click', (e) => {
-            const userMenu = document.getElementById('user-menu');
-            if (userMenu && !userMenu.classList.contains('hidden') && !authContainer.contains(e.target)) {
-                userMenu.classList.add('hidden');
+        // --- PANTRY LOGIC (MERGED) ---
+        function setPantryView(view) {
+            currentPantryView = view;
+            const gridView = document.getElementById('pantry-grid-view');
+            const listView = document.getElementById('pantry-list-view');
+            const gridBtn = document.getElementById('view-toggle-grid');
+            const listBtn = document.getElementById('view-toggle-list');
+
+            if (view === 'grid') {
+                gridView.classList.remove('hidden'); listView.classList.add('hidden');
+                gridBtn.classList.add('active'); listBtn.classList.remove('active');
+            } else {
+                gridView.classList.add('hidden'); listView.classList.remove('hidden');
+                gridBtn.classList.remove('active'); listBtn.classList.add('active');
             }
-        });
+            renderPantry();
+        }
 
+        function renderPantry() {
+            const searchInput = document.getElementById('pantry-search-input').value.toLowerCase();
+            if (!allUserProducts) return;
+
+            const filteredProducts = allUserProducts.filter(p => {
+                const statusMatch = currentPantryFilter === 'all' || (p.pantryStatus || 'in_stock') === currentPantryFilter;
+                const searchMatch = p.nombre.toLowerCase().includes(searchInput);
+                return statusMatch && searchMatch;
+            });
+            
+            if (currentPantryView === 'grid') renderPantryGridView(filteredProducts);
+            else renderPantryListView(filteredProducts);
+        }
+
+        function renderPantryGridView(products) {
+            const grid = document.getElementById('pantry-grid-view');
+            if (products.length === 0) {
+                grid.innerHTML = '<p class="text-gray-500 col-span-full text-center">No se encontraron productos.</p>';
+                return;
+            }
+            grid.innerHTML = products.map(p => {
+                const imageHtml = p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.nombre}" class="w-full h-24 object-cover">` : `<div class="w-full h-24 bg-gray-200 flex items-center justify-center text-gray-400"><i class="fas fa-camera fa-2x"></i></div>`;
+                const isInStock = (p.pantryStatus || 'in_stock') === 'in_stock';
+                const actionButton = isInStock ? `<button data-action="mark-used" data-id="${p.id}" class="w-full mt-2 text-sm bg-yellow-500 text-white px-2 py-1 rounded-md hover:bg-yellow-600">Marcar Gastado</button>` : `<button data-action="mark-instock" data-id="${p.id}" class="w-full mt-2 text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600">Reponer</button>`;
+                const { badge } = getExpirationStatus(p);
+
+                return `<div class="pantry-card bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col justify-between relative">
+                    ${isInStock ? badge : ''}
+                    <div class="cursor-pointer" data-action="edit-product" data-id="${p.id}">${imageHtml}<h4 class="text-sm font-semibold p-2 truncate" title="${p.nombre}">${p.nombre}</h4></div>
+                    <div class="p-2 border-t">${actionButton}<button data-action="add-to-list" data-name="${p.nombre}" class="w-full mt-1 text-sm bg-indigo-500 text-white px-2 py-1 rounded-md hover:bg-indigo-600">Añadir a Lista</button></div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderPantryListView(products) {
+            const tbody = document.getElementById('products-table-body');
+            const productCounts = allPurchases.flatMap(p => p.productos).reduce((acc, prod) => {
+                const key = prod.nombre.toLowerCase();
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+
+            if (products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">No se encontraron productos.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = products.map(p => {
+                const count = productCounts[p.nombre.toLowerCase()] || 0;
+                const imageHtml = p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.nombre}" class="w-12 h-12 object-cover rounded-md">` : `<div class="product-image-placeholder w-12 h-12 flex items-center justify-center rounded-md"><i class="fas fa-camera"></i></div>`;
+                const { badge } = getExpirationStatus(p);
+                const isInStock = (p.pantryStatus || 'in_stock') === 'in_stock';
+
+                return `<tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-6 py-4">${imageHtml}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
+                    <td class="px-6 py-4">${isInStock ? badge : '<span class="expiry-badge bg-gray-100 text-gray-800">Agotado</span>'}</td>
+                    <td class="px-6 py-4">${p.categoria_principal}</td>
+                    <td class="px-6 py-4 text-center">${count}</td>
+                    <td class="px-6 py-4 text-center"><button data-action="edit-product" data-id="${p.id}" class="text-indigo-600 hover:text-indigo-900"><i class="fas fa-pencil-alt"></i></button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function handlePantryActions(e) {
+            const targetElement = e.target.closest('[data-action]');
+            if (!targetElement) return;
+
+            const action = targetElement.dataset.action;
+            const productId = targetElement.dataset.id;
+            const productName = targetElement.dataset.name;
+
+            if (action === 'mark-used' || action === 'mark-instock') {
+                const newStatus = action === 'mark-used' ? 'out_of_stock' : 'in_stock';
+                const productRef = doc(db, "products", productId);
+                await updateDoc(productRef, { pantryStatus: newStatus });
+            } else if (action === 'add-to-list') {
+                addShoppingListItem(null, productName);
+            } else if (action === 'edit-product') {
+                openEditProductModal(productId);
+            }
+        }
+        
+        // --- EXPIRATION LOGIC ---
+        function getExpirationStatus(product) {
+            if (!product.purchaseDate) return { status: 'unknown', daysLeft: 999, badge: '' };
+            const life = shelfLife[product.categoria_principal] || shelfLife.default;
+            const purchaseTime = new Date(product.purchaseDate).getTime();
+            const expiryTime = purchaseTime + (life * 24 * 60 * 60 * 1000);
+            const daysLeft = Math.round((expiryTime - Date.now()) / (1000 * 60 * 60 * 24));
+
+            if (daysLeft < 0) return { status: 'expired', daysLeft, badge: '<span class="expiry-badge bg-red-100 text-red-800">Caducado</span>' };
+            if (daysLeft <= 3) return { status: 'expiring_soon', daysLeft, badge: `<span class="expiry-badge bg-yellow-100 text-yellow-800">Caduca en ${daysLeft}d</span>` };
+            return { status: 'ok', daysLeft, badge: '<span class="expiry-badge bg-green-100 text-green-800">En buen estado</span>' };
+        }
+
+        // --- IMAGE SELECTION LOGIC (REVAMPED) ---
         async function openImageSelectionModal(context, identifier) {
-            activeImageSelection.context = context;
-            activeImageSelection.index = identifier;
-            activeImageSelection.imageUrl = null;
-
+            activeImageSelection = { context, identifier, imageUrl: null };
             let productName;
             if (context === 'confirmation') {
                 productName = currentTicketData.productos[identifier].nombre;
@@ -1952,44 +962,40 @@
             document.getElementById('image-modal-product-name').textContent = productName;
             document.getElementById('image-prompt-input').value = '';
             document.getElementById('upload-image-input').value = '';
-            const optionsContainer = document.getElementById('image-options-container');
-            optionsContainer.innerHTML = Array(4).fill(0).map(() => `<div class="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center"><div class="loader"></div></div>`).join('');
-            
+            document.getElementById('ai-image-container').innerHTML = '';
             showModal('image-selection-modal');
-
-            // Generate 4 suggested images
-            const prompts = [
-                `a clean product photo of ${productName}, on a white background`,
-                `icon of ${productName}, simple, clean background`,
-                `${productName}, studio lighting, plain background`,
-                `a single ${productName}, isolated on white`
-            ];
-            const imagePromises = prompts.map((p, i) => generateImageWithPrompt(p, optionsContainer.children[i]));
-            const imageUrls = await Promise.all(imagePromises);
-
-            optionsContainer.innerHTML = '';
-            imageUrls.forEach(url => {
-                if (url) {
-                    const img = document.createElement('img');
-                    img.src = url;
-                    img.className = "w-full h-32 object-cover rounded-lg cursor-pointer image-option";
-                    optionsContainer.appendChild(img);
-                }
-            });
+            await searchUnsplashImages(productName);
         }
+        
+        async function searchUnsplashImages(query) {
+            const container = document.getElementById('image-options-container');
+            const loader = document.getElementById('unsplash-loader');
+            container.innerHTML = '';
+            loader.classList.remove('hidden');
 
-        async function generateCustomImage() {
-            const prompt = document.getElementById('image-prompt-input').value;
-            if (!prompt) {
-                showMessage("Atención", "Por favor, escribe una descripción para generar la imagen.");
+            if (!unsplashApiKey || unsplashApiKey === 'YOUR_UNSPLASH_API_KEY') {
+                container.innerHTML = `<p class="text-red-500 col-span-full text-center">Por favor, añade una clave de API de Unsplash en el código para activar la búsqueda de imágenes.</p>`;
+                loader.classList.add('hidden');
                 return;
             }
-            const container = document.getElementById('image-options-container');
-            container.innerHTML = `<div class="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center"><div class="loader"></div></div>`;
-            const imageUrl = await generateImageWithPrompt(prompt, container);
-            if (imageUrl) {
-                 container.innerHTML = `<img src="${imageUrl}" alt="Imagen generada" class="w-full h-32 object-cover rounded-lg cursor-pointer image-option selected">`;
-                 activeImageSelection.imageUrl = imageUrl;
+            
+            try {
+                const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=5&client_id=${unsplashApiKey}`);
+                if (!response.ok) throw new Error(`Error de Unsplash: ${response.statusText}`);
+                const data = await response.json();
+                
+                if (data.results.length === 0) {
+                    container.innerHTML = `<p class="text-gray-500 col-span-full text-center">No se encontraron imágenes en Unsplash para "${query}".</p>`;
+                } else {
+                    container.innerHTML = data.results.map(photo => 
+                        `<img src="${photo.urls.small}" alt="${photo.alt_description || query}" class="w-full h-32 object-cover rounded-lg cursor-pointer image-option">`
+                    ).join('');
+                }
+            } catch(error) {
+                console.error("Error fetching from Unsplash:", error);
+                container.innerHTML = `<p class="text-red-500 col-span-full text-center">No se pudieron cargar las imágenes.</p>`;
+            } finally {
+                loader.classList.add('hidden');
             }
         }
 
@@ -1997,30 +1003,165 @@
             const file = event.target.files[0];
             if (file) {
                 const imageUrl = await fileToDataUrl(file);
-                const container = document.getElementById('image-options-container');
-                container.innerHTML = `<img src="${imageUrl}" alt="Imagen subida" class="w-full h-32 object-cover rounded-lg cursor-pointer image-option selected">`;
-                activeImageSelection.imageUrl = imageUrl;
+                confirmImageSelection(imageUrl);
             }
         }
 
-        function confirmImageSelection() {
-            if (!activeImageSelection.imageUrl) {
-                showMessage("Atención", "Por favor, selecciona o genera una imagen antes de confirmar.");
-                return;
+        async function generateAIGeneratedImage() {
+            const prompt = document.getElementById('image-prompt-input').value;
+            if (!prompt) return showMessage("Atención", "Por favor, escribe una descripción para generar la imagen.");
+            const container = document.getElementById('ai-image-container');
+            container.innerHTML = `<div class="loader mx-auto"></div>`;
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ['IMAGE'] } };
+                const apiKey = firebaseConfig.apiKey;
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(errorBody.error?.message || 'Unknown API error');
+                }
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (base64Data) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    container.innerHTML = `<img src="${imageUrl}" alt="Imagen generada" class="h-32 object-cover rounded-lg cursor-pointer image-option selected">`;
+                    document.querySelectorAll('#image-options-container .image-option').forEach(el => el.classList.remove('selected'));
+                    activeImageSelection.imageUrl = imageUrl;
+                } else {
+                    throw new Error("No se recibió ninguna imagen de la API.");
+                }
+            } catch (error) {
+                console.error("Error generating AI image:", error);
+                container.innerHTML = `<p class="text-red-500 text-sm">No se pudo generar la imagen.</p>`;
             }
+        }
+
+        function confirmImageSelection(directUrl = null) {
+            const selectedImageUrl = directUrl || activeImageSelection.imageUrl;
+            if (!selectedImageUrl) return showMessage("Atención", "Por favor, selecciona o sube una imagen antes de confirmar.");
 
             if (activeImageSelection.context === 'confirmation') {
-                const index = activeImageSelection.index;
-                currentTicketData.productos[index].imageUrl = activeImageSelection.imageUrl;
-                const btn = document.getElementById(`product-image-btn-${index}`);
-                btn.innerHTML = `<i class="fas fa-check-circle text-green-500"></i>`;
+                const index = activeImageSelection.identifier;
+                currentTicketData.productos[index].imageUrl = selectedImageUrl;
+                document.getElementById(`product-image-btn-${index}`).innerHTML = `<i class="fas fa-check-circle text-green-500"></i>`;
             } else { // 'edit'
-                const previewContainer = document.getElementById('edit-image-preview');
-                previewContainer.innerHTML = `<img src="${activeImageSelection.imageUrl}" class="w-40 h-40 object-cover rounded-lg">`;
+                document.getElementById('edit-image-preview').innerHTML = `<img src="${selectedImageUrl}" class="w-40 h-40 object-cover rounded-lg">`;
             }
-
             hideModal('image-selection-modal');
         }
+
+        // --- SHOPPING LIST LOGIC ---
+        async function updateShoppingListInFirestore() {
+            if (!currentUser) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, { shoppingList: shoppingList });
+        }
+
+        function renderShoppingList() {
+            const container = document.getElementById('shopping-list');
+            if (shoppingList.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">Tu lista de la compra está vacía.</p>';
+                return;
+            }
+            container.innerHTML = shoppingList.map((item, index) => `<div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"><label for="item-${index}" class="flex items-center cursor-pointer"><input type="checkbox" id="item-${index}" data-index="${index}" class="form-checkbox h-5 w-5 text-indigo-600 rounded"><span class="ml-3 text-gray-700">${item}</span></label><button data-index="${index}" class="remove-item-btn text-gray-400 hover:text-red-500"><i class="fas fa-times-circle"></i></button></div>`).join('');
+        }
+
+        async function addShoppingListItem(event, name = null) {
+            const input = document.getElementById('add-item-input');
+            const itemName = name || input.value.trim();
+            if (itemName && !shoppingList.includes(itemName)) {
+                shoppingList.push(itemName);
+                await updateShoppingListInFirestore();
+                showMessage("Éxito", `"${itemName}" añadido a tu lista.`);
+            }
+            input.value = '';
+        }
+
+        async function handleShoppingListActions(e) {
+            const target = e.target;
+            if (target.type === 'checkbox') {
+                const index = target.dataset.index;
+                setTimeout(async () => {
+                    shoppingList.splice(index, 1);
+                    await updateShoppingListInFirestore();
+                }, 300);
+            } else if (target.closest('.remove-item-btn')) {
+                const index = target.closest('.remove-item-btn').dataset.index;
+                shoppingList.splice(index, 1);
+                await updateShoppingListInFirestore();
+            }
+        }
+
+        async function generateShoppingSuggestions() {
+            const suggestionsContainer = document.getElementById('suggestions-container');
+            suggestionsContainer.innerHTML = '<div class="loader mx-auto" style="width:30px; height:30px; border-width:4px;"></div>';
+            const prompt = buildShoppingSuggestionPrompt();
+            try {
+                const requestBody = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } };
+                const apiKey = firebaseConfig.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                const jsonText = data.candidates[0].content.parts[0].text;
+                const suggestions = JSON.parse(jsonText).sugerencias;
+
+                if (suggestions.length === 0) {
+                    suggestionsContainer.innerHTML = '<p class="text-sm text-gray-600">¡Parece que tu despensa está llena! No hay sugerencias por ahora.</p>';
+                } else {
+                    suggestionsContainer.innerHTML = suggestions.map(item => `<div class="flex justify-between items-center bg-green-50 p-2 rounded-md"><span class="text-sm">${item}</span><button data-name="${item}" class="add-suggestion-btn bg-green-200 text-green-800 text-xs font-bold px-2 py-1 rounded-full hover:bg-green-300">+</button></div>`).join('');
+                    suggestionsContainer.querySelectorAll('.add-suggestion-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            addShoppingListItem(null, e.target.dataset.name);
+                            e.target.closest('div').remove();
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error("Error generating suggestions:", error);
+                suggestionsContainer.innerHTML = '<p class="text-red-500 text-sm">No se pudieron generar sugerencias en este momento.</p>';
+            }
+        }
+
+        // --- UTILITY & OTHER FUNCTIONS ---
+        function buildAIPrompt() { return `Analiza la imagen de este ticket de supermercado. Extrae la siguiente información en un formato JSON estricto. No incluyas nada fuera del objeto JSON. El JSON debe tener la siguiente estructura: { "supermercado": "string", "direccion_supermercado": "string", "fecha": "string", "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ], "total": number } Reglas de categorización (MUY IMPORTANTE): - Asigna a cada producto una categoría de los 3 niveles: categoria_principal, familia y subfamilia. - Utiliza ÚNICA Y EXCLUSIVAMENTE las siguientes categorías. No inventes ninguna. - Si un producto no encaja, usa 'OTROS GASTOS' -> 'Varios' -> 'Sin especificar'. Jerarquía de Categorías Permitidas: - 🛒 ALIMENTOS Y BEBIDAS: - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas] - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos] - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado] - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos] - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"] - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"] - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"] - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"] - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"] - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"] - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"] - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"] - 🏠 HOGAR Y LIMPIEZA: - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"] - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"] - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"] - 🧴 HIGIENE Y CUIDADO PERSONAL: - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"] - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"] - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"] - 🐾 MASCOTAS: - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"] - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"] - 💸 OTROS GASTOS: - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"] Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.`; }
+        function buildShoppingSuggestionPrompt() { const pantryState = allUserProducts.map(p => { const { status, daysLeft } = getExpirationStatus(p); return `- ${p.nombre}: ${p.pantryStatus || 'in_stock'}. Estado de caducidad: ${status} (${daysLeft} días restantes).`; }).join('\n'); return `Eres un asistente de compras personal. Analiza el estado de la despensa de este usuario y sus hábitos de compra para sugerirle una lista de la compra inteligente. ESTADO ACTUAL DE LA DESPENSA:\n${pantryState}\nConsidera lo siguiente: 1. Prioriza los productos marcados como 'out_of_stock'. 2. Sugiere productos que estén a punto de caducar ('expiring_soon') si son de consumo frecuente. 3. No sugieras productos ya caducados ('expired'). Devuelve tu respuesta en un formato JSON estricto, con una única clave "sugerencias" que contenga un array de strings con los nombres de los productos a comprar. No incluyas nada más en la respuesta. Ejemplo de respuesta: { "sugerencias": ["Leche Fresca", "Plátanos", "Pechuga de Pollo"] }`; }
+        function fileToDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
+        function showMessage(title, message) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; showModal('message-modal'); }
+        function showModal(id) { const modal = document.getElementById(id); modal.classList.remove('hidden'); setTimeout(() => modal.classList.remove('opacity-0'), 10); }
+        function hideModal(id) { const modal = document.getElementById(id); modal.classList.add('opacity-0'); setTimeout(() => modal.classList.add('hidden'), 300); }
+        function showWelcomeModal() { showModal('welcome-modal'); }
+        function resetAppState() { allPurchases = []; allUserProducts = []; currentFilteredPurchases = []; selectedPurchases.clear(); if (supermarketChart) supermarketChart.destroy(); if (categoryChart) categoryChart.destroy(); resetTicketAnalysis(); document.getElementById('purchases-history').innerHTML = ''; document.getElementById('pantry-grid-view').innerHTML = ''; document.getElementById('products-table-body').innerHTML = ''; shoppingList = []; renderShoppingList(); }
+        function resetTicketAnalysis() { currentFile = null; currentTicketData = null; document.getElementById('file-upload').value = ''; document.getElementById('image-preview-container').innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>'; document.getElementById('process-ticket-btn').disabled = true; }
+        function populateFilters() { const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a, b) => b - a); const yearSelect = document.getElementById('filter-year'); yearSelect.innerHTML = '<option value="all">Todos los Años</option>' + years.map(y => `<option value="${y}">${y}</option>`).join(''); const monthSelect = document.getElementById('filter-month'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; monthSelect.innerHTML = '<option value="all">Todos los Meses</option>' + months.map((m, i) => `<option value="${i+1}">${m}</option>`).join(''); }
+        function updateContextFilter(profile) { const contextSelect = document.getElementById('context-filter'); let options = '<option value="personal">Gastos Personales</option>'; if (profile && profile.householdId) { options += `<option value="household">Gastos del Hogar</option>`; } options += '<option value="all">Ver Todo</option>'; contextSelect.innerHTML = options; }
+        function handleAuthError(error) { if (error.code === 'auth/unauthorized-domain') { showMessage("Error de Configuración", "El dominio actual no está autorizado para la autenticación de Firebase."); } else { console.error("Error de autenticación:", error); showMessage("Error de Autenticación", `No se pudo iniciar sesión. Error: ${error.message}`); } }
+        function handleSelectAll(e) { const isChecked = e.target.checked; document.querySelectorAll('.purchase-checkbox').forEach(cb => { cb.checked = isChecked; const id = cb.dataset.id; if (isChecked) selectedPurchases.add(id); else selectedPurchases.delete(id); }); updateDeleteButtonState(); }
+        function handlePurchaseSelect(e) { const id = e.target.dataset.id; if (e.target.checked) selectedPurchases.add(id); else selectedPurchases.delete(id); updateDeleteButtonState(); }
+        function updateDeleteButtonState() { document.getElementById('delete-selected-btn').disabled = selectedPurchases.size === 0; }
+        function confirmDeleteSelected() { document.getElementById('delete-modal-title').textContent = 'Eliminar Compras'; document.getElementById('delete-modal-message').textContent = `¿Estás seguro de que quieres eliminar ${selectedPurchases.size} compra(s)?`; showModal('delete-confirm-modal'); document.getElementById('delete-confirm-btn').onclick = async () => { hideModal('delete-confirm-modal'); processingOverlay.classList.remove('hidden'); processingText.textContent = 'Eliminando...'; try { const batch = writeBatch(db); selectedPurchases.forEach(id => batch.delete(doc(db, 'tickets', id))); await batch.commit(); showMessage('Éxito', 'Las compras seleccionadas han sido eliminadas.'); selectedPurchases.clear(); updateDeleteButtonState(); } catch (error) { console.error("Error deleting purchases:", error); showMessage('Error', 'No se pudieron eliminar las compras.'); } finally { processingOverlay.classList.add('hidden'); } }; document.getElementById('delete-cancel-btn').onclick = () => hideModal('delete-confirm-modal'); }
+        function resetChartFilter() { chartFilter = { type: null, value: null }; renderDashboard(); }
+        function handleCategoryChartClick(evt, elements) { if (elements.length > 0) { const clickedLabel = categoryChart.data.labels[elements[0].index]; if (categoryChartLevel === 1) { selectedPrincipal = clickedLabel; categoryChartLevel = 2; document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`; document.getElementById('category-chart-back-btn').classList.remove('hidden'); renderCategoryChart(); } else if (categoryChartLevel === 2) { selectedFamilia = clickedLabel; categoryChartLevel = 3; document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedFamilia}`; renderCategoryChart(); } } }
+        function handleCategoryChartBack() { if (categoryChartLevel === 3) { categoryChartLevel = 2; document.getElementById('category-chart-title').textContent = `Desglose de: ${selectedPrincipal}`; } else if (categoryChartLevel === 2) { categoryChartLevel = 1; document.getElementById('category-chart-title').textContent = 'Gasto por Categoría Principal'; document.getElementById('category-chart-back-btn').classList.add('hidden'); resetChartFilter(); } renderCategoryChart(); }
+        async function openEditProductModal(productId) { const product = allUserProducts.find(p => p.id === productId); if (!product) return; document.getElementById('edit-product-id').value = product.id; document.getElementById('edit-product-original-name').value = product.nombre; document.getElementById('edit-product-name').value = product.nombre; const previewContainer = document.getElementById('edit-image-preview'); if (product.imageUrl) { previewContainer.innerHTML = `<img src="${product.imageUrl}" alt="${product.nombre}" class="w-40 h-40 object-cover rounded-lg">`; } else { previewContainer.innerHTML = `<div class="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500"><i class="fas fa-image fa-3x"></i></div>`; } populatePrincipalDropdown('edit-category-principal', product.categoria_principal); populateFamiliaDropdown(product.familia, 'edit-category-familia', product.categoria_principal); populateSubfamiliaDropdown(product.subfamilia, 'edit-category-subfamilia', product.categoria_principal, product.familia); showModal('edit-product-modal'); }
+        function populatePrincipalDropdown(selectId, selectedValue) { const select = document.getElementById(selectId); select.innerHTML = Object.keys(categorias).map(cat => `<option value="${cat}" ${cat === selectedValue ? 'selected' : ''}>${cat}</option>`).join(''); }
+        function populateFamiliaDropdown(selectedValue, selectId, principalValue) { const select = document.getElementById(selectId); if (categorias[principalValue]) { select.innerHTML = Object.keys(categorias[principalValue]).map(fam => `<option value="${fam}" ${fam === selectedValue ? 'selected' : ''}>${fam}</option>`).join(''); } else { select.innerHTML = ''; } populateSubfamiliaDropdown(null, selectId.replace('familia', 'subfamilia'), principalValue, select.value); }
+        function populateSubfamiliaDropdown(selectedValue, selectId, principalValue, familiaValue) { const select = document.getElementById(selectId); if (categorias[principalValue] && categorias[principalValue][familiaValue]) { select.innerHTML = categorias[principalValue][familiaValue].map(sub => `<option value="${sub}" ${sub === selectedValue ? 'selected' : ''}>${sub}</option>`).join(''); } else { select.innerHTML = ''; } }
+        async function saveProductChanges() { const productId = document.getElementById('edit-product-id').value; const originalName = document.getElementById('edit-product-original-name').value; const newName = document.getElementById('edit-product-name').value; const newCat = document.getElementById('edit-category-principal').value; const newFam = document.getElementById('edit-category-familia').value; const newSub = document.getElementById('edit-category-subfamilia').value; const newImageUrl = document.querySelector('#edit-image-preview img')?.src || null; hideModal('edit-product-modal'); processingOverlay.classList.remove('hidden'); processingText.textContent = "Actualizando producto y tickets..."; try { const batch = writeBatch(db); const productRef = doc(db, "products", productId); batch.update(productRef, { nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub, imageUrl: newImageUrl }); for (const ticket of allPurchases) { let ticketModified = false; const updatedProductos = ticket.productos.map(p => { if (p.nombre === originalName) { ticketModified = true; return { ...p, nombre: newName, categoria_principal: newCat, familia: newFam, subfamilia: newSub }; } return p; }); if (ticketModified) { const ticketRef = doc(db, "tickets", ticket.id); batch.update(ticketRef, { productos: updatedProductos }); } } await batch.commit(); showMessage("Éxito", "El producto y todas las compras asociadas han sido actualizados."); } catch (error) { console.error("Error updating product:", error); showMessage("Error", `No se pudieron guardar los cambios. ${error.message}`); } finally { processingOverlay.classList.add('hidden'); } }
+        async function loadHouseholdMembers(householdId) { const membersList = document.getElementById('household-members-list'); membersList.innerHTML = '<li>Cargando miembros...</li>'; const householdRef = doc(db, "households", householdId); const householdDoc = await getDoc(householdRef); if (householdDoc.exists()) { const membersData = householdDoc.data().members; if (membersData && Object.keys(membersData).length > 0) { membersList.innerHTML = Object.values(membersData).map(member => `<li class="flex items-center gap-3 bg-gray-50 p-2 rounded-lg"><img src="${member.photoURL}" alt="${member.displayName}" class="w-8 h-8 rounded-full"><span class="font-medium">${member.displayName}</span></li>`).join(''); } else { membersList.innerHTML = '<li class="text-gray-500">No hay miembros en este hogar.</li>'; } } else { membersList.innerHTML = '<li class="text-red-500">Error: No se encontró el hogar.</li>'; } }
+        async function createHousehold() { const nameInput = document.getElementById('household-name-input'); const householdName = nameInput.value.trim(); if (!householdName) return showMessage("Error", "Por favor, introduce un nombre para el hogar."); processingOverlay.classList.remove('hidden'); processingText.textContent = "Creando hogar..."; try { const batch = writeBatch(db); const householdRef = doc(collection(db, "households")); batch.set(householdRef, { name: householdName, ownerId: currentUser.uid, createdAt: serverTimestamp(), members: { [currentUser.uid]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } } }); const userRef = doc(db, "users", currentUser.uid); batch.update(userRef, { householdId: householdRef.id }); await batch.commit(); showMessage("Éxito", `Hogar "${householdName}" creado correctamente.`); } catch (error) { console.error("Error creating household: ", error); showMessage("Error", "No se pudo crear el hogar."); } finally { processingOverlay.classList.add('hidden'); } }
+        async function joinHousehold() { const idInput = document.getElementById('join-household-id-input'); const householdId = idInput.value.trim(); if (!householdId) return showMessage("Error", "Por favor, introduce un ID de hogar válido."); processingOverlay.classList.remove('hidden'); processingText.textContent = "Uniéndote al hogar..."; try { const householdRef = doc(db, "households", householdId); const householdDoc = await getDoc(householdRef); if (!householdDoc.exists()) throw new Error("El hogar no existe."); const batch = writeBatch(db); const userRef = doc(db, "users", currentUser.uid); const memberData = { [`members.${currentUser.uid}`]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } }; batch.update(householdRef, memberData); batch.update(userRef, { householdId: householdId }); await batch.commit(); showMessage("Éxito", "Te has unido al hogar correctamente."); } catch (error) { console.error("Error joining household: ", error); showMessage("Error", `No se pudo unir al hogar. ${error.message}`); } finally { processingOverlay.classList.add('hidden'); } }
+        async function leaveHousehold() { if (!userProfile || !userProfile.householdId) return; processingOverlay.classList.remove('hidden'); processingText.textContent = "Abandonando el hogar..."; try { const batch = writeBatch(db); const householdRef = doc(db, "households", userProfile.householdId); const userRef = doc(db, "users", currentUser.uid); batch.update(householdRef, { [`members.${currentUser.uid}`]: deleteField() }); batch.update(userRef, { householdId: null }); await batch.commit(); showMessage("Éxito", "Has abandonado el hogar."); } catch (error) { console.error("Error leaving household:", error); showMessage("Error", "No se pudo abandonar el hogar."); } finally { processingOverlay.classList.add('hidden'); } }
+
+        // --- APP INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', setupEventListeners);
+        window.addEventListener('click', (e) => {
+            const userMenu = document.getElementById('user-menu');
+            if (userMenu && !userMenu.classList.contains('hidden') && !authContainer.contains(e.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
 
     </script>
 </body>
