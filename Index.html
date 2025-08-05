@@ -818,26 +818,26 @@
                 return yearMatch && monthMatch && contextMatch;
             });
             
-            // Apply drill-down filters from charts
-            let finalFilteredPurchases = [...baseFilteredPurchases];
+            // Apply drill-down filters from charts to determine what's shown in the history table
+            let finalFilteredForHistory = [...baseFilteredPurchases];
             
             // Supermarket drilldown filter
             if (supermarketDrilldown.level > 1) {
-                finalFilteredPurchases = finalFilteredPurchases.filter(p => p.supermercado === supermarketDrilldown.supermarket);
+                finalFilteredForHistory = finalFilteredForHistory.filter(p => p.supermercado === supermarketDrilldown.supermarket);
                 if (supermarketDrilldown.level > 2) {
-                    finalFilteredPurchases = finalFilteredPurchases.filter(p => p.productos.some(prod => prod.categoria_principal === supermarketDrilldown.category));
+                    finalFilteredForHistory = finalFilteredForHistory.filter(p => p.productos.some(prod => prod.categoria_principal === supermarketDrilldown.category));
                 }
             }
             
             // Category drilldown filter
             if (categoryDrilldown.level > 1) {
-                finalFilteredPurchases = finalFilteredPurchases.filter(p => p.productos.some(prod => prod.categoria_principal === categoryDrilldown.principal));
+                finalFilteredForHistory = finalFilteredForHistory.filter(p => p.productos.some(prod => prod.categoria_principal === categoryDrilldown.principal));
                 if (categoryDrilldown.level > 2) {
-                    finalFilteredPurchases = finalFilteredPurchases.filter(p => p.productos.some(prod => prod.familia === categoryDrilldown.family));
+                    finalFilteredForHistory = finalFilteredForHistory.filter(p => p.productos.some(prod => prod.familia === categoryDrilldown.family));
                 }
             }
 
-            currentFilteredPurchases = finalFilteredPurchases;
+            currentFilteredPurchases = finalFilteredForHistory;
             
             // Render all components
             renderSummaryCards();
@@ -1138,11 +1138,29 @@
                 - 🛒 ALIMENTOS Y BEBIDAS:
                   - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas]
                   - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
-                  - ... (resto de categorías)
-                - 🏠 HOGAR Y LIMPIEZA: ...
-                - 🧴 HIGIENE Y CUIDADO PERSONAL: ...
-                - 🐾 MASCOTAS: ...
-                - 💸 OTROS GASTOS: ...
+                  - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado]
+                  - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos]
+                  - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"]
+                  - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"]
+                  - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"]
+                  - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"]
+                  - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"]
+                  - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"]
+                  - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"]
+                  - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
+                - 🏠 HOGAR Y LIMPIEZA:
+                  - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"]
+                  - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"]
+                  - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
+                - 🧴 HIGIENE Y CUIDADO PERSONAL:
+                  - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"]
+                  - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"]
+                  - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
+                - 🐾 MASCOTAS:
+                  - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"]
+                  - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
+                - 💸 OTROS GASTOS:
+                  - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
 
                 Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.
             `;
