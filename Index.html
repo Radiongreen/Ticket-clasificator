@@ -58,7 +58,11 @@
             background-color: #f3f4f6;
             color: #9ca3af;
         }
-        #edit-image-preview .loader { width: 30px; height: 30px; border-width: 4px; }
+        #edit-image-preview .loader, #image-options-container .loader { width: 30px; height: 30px; border-width: 4px; }
+        .image-option.selected {
+            border: 3px solid #4f46e5;
+            box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -469,8 +473,8 @@
                     <div id="edit-image-preview" class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
                         <!-- La imagen o el loader se insertarán aquí -->
                     </div>
-                    <button id="generate-image-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">
-                        <i class="fas fa-magic mr-2"></i>Generar Imagen
+                    <button id="change-image-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300">
+                        <i class="fas fa-edit mr-2"></i>Cambiar Imagen
                     </button>
                 </div>
                 <div class="md:col-span-2 space-y-4">
@@ -497,6 +501,44 @@
             <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
                 <button id="edit-product-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
                 <button id="edit-product-save-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Selección de Imagen -->
+    <div id="image-selection-modal" class="modal fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-auto max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Seleccionar Imagen para <span id="image-modal-product-name" class="text-indigo-600"></span></h3>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <!-- Opciones de Imagen -->
+                <div class="mb-6">
+                    <h4 class="font-semibold mb-2">Opciones Sugeridas por la IA</h4>
+                    <div id="image-options-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Las imágenes generadas aparecerán aquí -->
+                    </div>
+                </div>
+                <!-- Generación Personalizada -->
+                <div class="mb-6 border-t pt-4">
+                    <h4 class="font-semibold mb-2">Generar Imagen Personalizada</h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="image-prompt-input" placeholder="Ej: Tomate en rama, muy rojo" class="flex-grow confirm-input">
+                        <button id="generate-custom-image-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">Generar</button>
+                    </div>
+                </div>
+                <!-- Subir Imagen Propia -->
+                <div class="border-t pt-4">
+                     <h4 class="font-semibold mb-2">Subir tu Propia Imagen</h4>
+                     <label for="upload-image-input" class="w-full text-center cursor-pointer bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition duration-300 block">
+                        <i class="fas fa-upload mr-2"></i>Seleccionar Archivo
+                     </label>
+                     <input type="file" id="upload-image-input" class="hidden" accept="image/*">
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end gap-4">
+                <button id="image-select-cancel-btn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                <button id="image-select-confirm-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Confirmar Imagen</button>
             </div>
         </div>
     </div>
@@ -542,6 +584,11 @@
         let unsubscribePurchases = () => {};
         let unsubscribeProducts = () => {};
         let unsubscribeProfile = () => {};
+        let activeImageSelection = {
+            context: null, // 'confirmation' or 'edit'
+            index: null, // index in currentTicketData.productos or product ID
+            imageUrl: null
+        };
 
         // --- DEFINICIÓN DE CATEGORÍAS ---
         const categorias = {
@@ -733,6 +780,11 @@
                         updateConfirmationTotal();
                     }
                 }
+                if (e.target.closest('.edit-product-image-btn')) {
+                    const button = e.target.closest('.edit-product-image-btn');
+                    const index = button.dataset.index;
+                    openImageSelectionModal('confirmation', index);
+                }
             });
 
 
@@ -755,7 +807,23 @@
             document.getElementById('edit-product-save-btn').addEventListener('click', saveProductChanges);
             document.getElementById('edit-category-principal').addEventListener('change', () => populateFamiliaDropdown(null, 'edit-category-familia', document.getElementById('edit-category-principal').value));
             document.getElementById('edit-category-familia').addEventListener('change', () => populateSubfamiliaDropdown(null, 'edit-category-subfamilia', document.getElementById('edit-category-principal').value, document.getElementById('edit-category-familia').value));
-            document.getElementById('generate-image-btn').addEventListener('click', generateProductImage);
+            document.getElementById('change-image-btn').addEventListener('click', () => {
+                const productId = document.getElementById('edit-product-id').value;
+                openImageSelectionModal('edit', productId);
+            });
+
+            // Image Selection Modal
+            document.getElementById('image-select-cancel-btn').addEventListener('click', () => hideModal('image-selection-modal'));
+            document.getElementById('image-select-confirm-btn').addEventListener('click', confirmImageSelection);
+            document.getElementById('generate-custom-image-btn').addEventListener('click', generateCustomImage);
+            document.getElementById('upload-image-input').addEventListener('change', handleImageUpload);
+            document.getElementById('image-options-container').addEventListener('click', (e) => {
+                if (e.target.tagName === 'IMG') {
+                    document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    activeImageSelection.imageUrl = e.target.src;
+                }
+            });
         }
 
         // --- RENDERIZADO DE COMPONENTES DE UI ---
@@ -1046,6 +1114,7 @@
                 const data = await response.json();
                 const jsonText = data.candidates[0].content.parts[0].text;
                 currentTicketData = JSON.parse(jsonText);
+                currentTicketData.productos.forEach(p => p.imageUrl = null); // Add imageUrl property
                 
                 showConfirmationModal(currentTicketData);
 
@@ -1083,17 +1152,15 @@
 
                 return `
                 <div id="product-row-${index}" class="grid grid-cols-12 gap-2 items-center border-b py-2 product-row">
-                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly title="La edición del nombre se realizará en la pestaña 'Mis Productos' para mantener la consistencia."></div>
+                    <div class="col-span-1"><button class="edit-product-image-btn p-2 rounded-md hover:bg-gray-200" data-index="${index}" id="product-image-btn-${index}"><i class="fas fa-image text-gray-500"></i></button></div>
+                    <div class="col-span-3"><input type="text" value="${p.nombre}" class="confirm-input confirm-name-input" data-index="${index}" readonly></div>
                     <div class="col-span-1"><input type="number" value="${p.cantidad}" class="confirm-input confirm-qty-input" data-index="${index}" step="1" min="1"></div>
                     <div class="col-span-1"><input type="number" value="${p.precio.toFixed(2)}" class="confirm-input confirm-price-input" data-index="${index}" step="0.01"></div>
                     <div class="col-span-2"><select class="confirm-select confirm-cat-principal" id="confirm-cat-principal-${index}" data-index="${index}">${principalOptions}</select></div>
                     <div class="col-span-2"><select class="confirm-select confirm-cat-familia" id="confirm-cat-familia-${index}" data-index="${index}">${familiaOptions}</select></div>
-                    <div class="col-span-2"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
-                    <div class="col-span-1 text-center">
-                        <button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-                `;
+                    <div class="col-span-1"><select class="confirm-select confirm-cat-subfamilia" id="confirm-cat-subfamilia-${index}" data-index="${index}">${subfamiliaOptions}</select></div>
+                    <div class="col-span-1 text-center"><button class="delete-product-row-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-trash"></i></button></div>
+                </div>`;
             }).join('');
 
             content.innerHTML = `
@@ -1109,12 +1176,13 @@
                 </div>
                 <div class="space-y-2">
                     <div class="grid grid-cols-12 gap-2 font-bold text-sm text-gray-600 px-2">
+                        <div class="col-span-1">Img</div>
                         <div class="col-span-3">Nombre</div>
                         <div class="col-span-1">Cant.</div>
                         <div class="col-span-1">Precio</div>
                         <div class="col-span-2">Categoría</div>
                         <div class="col-span-2">Familia</div>
-                        <div class="col-span-2">Subfamilia</div>
+                        <div class="col-span-1">Subflia.</div>
                         <div class="col-span-1"></div>
                     </div>
                     ${productRows}
@@ -1146,6 +1214,7 @@
                     categoria_principal: row.querySelector('.confirm-cat-principal').value,
                     familia: row.querySelector('.confirm-cat-familia').value,
                     subfamilia: row.querySelector('.confirm-cat-subfamilia').value,
+                    imageUrl: currentTicketData.productos[originalIndex].imageUrl // Preserve the image
                 };
                 newProductos.push(newProduct);
             });
@@ -1236,6 +1305,7 @@
                         categoria_principal: product.categoria_principal,
                         familia: product.familia,
                         subfamilia: product.subfamilia,
+                        imageUrl: product.imageUrl || null,
                         lastUpdate: serverTimestamp()
                     }, { merge: true });
                 }
@@ -1345,7 +1415,7 @@
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onload = () => resolve(reader.result);
                 reader.onerror = error => reject(error);
             });
         }
@@ -1546,23 +1616,16 @@
             showModal('edit-product-modal');
         }
 
-        async function generateProductImage() {
-            const productName = document.getElementById('edit-product-name').value;
-            if (!productName) {
-                showMessage("Error", "Por favor, introduce un nombre de producto primero.");
-                return;
-            }
-
-            const previewContainer = document.getElementById('edit-image-preview');
-            previewContainer.innerHTML = `<div class="loader"></div>`;
-
+        async function generateImageWithPrompt(prompt, container) {
+            container.innerHTML = `<div class="loader"></div>`;
             try {
-                const prompt = `a clean, simple icon of ${productName}, on a white background, studio quality`;
-                
-                const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+                };
                 const apiKey = firebaseConfig.apiKey;
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+                
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1571,21 +1634,27 @@
 
                 if (!response.ok) {
                     const errorBody = await response.json();
-                    throw new Error(`API Error: ${errorBody.error.message}`);
+                    let errorMessage = errorBody.error?.message || 'Unknown API error';
+                    if (errorMessage.includes('billing')) {
+                        errorMessage = "La API de Imagen requiere una cuenta de facturación activa. Se ha cambiado a un modelo alternativo."
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const result = await response.json();
-                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                    const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                    previewContainer.innerHTML = `<img src="${imageUrl}" alt="${productName}" class="w-40 h-40 object-cover rounded-lg">`;
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                
+                if (base64Data) {
+                    return `data:image/png;base64,${base64Data}`;
                 } else {
-                    throw new Error("No se recibió ninguna imagen.");
+                    throw new Error("No se recibió ninguna imagen de la API.");
                 }
 
             } catch (error) {
                 console.error("Error generating image:", error);
                 showMessage("Error de IA", `No se pudo generar la imagen. ${error.message}`);
-                previewContainer.innerHTML = `<div class="w-40 h-40 bg-gray-200 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-exclamation-triangle fa-3x"></i></div>`;
+                container.innerHTML = `<div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center text-red-500"><i class="fas fa-exclamation-triangle"></i></div>`;
+                return null;
             }
         }
 
@@ -1870,6 +1939,92 @@
                 userMenu.classList.add('hidden');
             }
         });
+
+        async function openImageSelectionModal(context, identifier) {
+            activeImageSelection.context = context;
+            activeImageSelection.index = identifier;
+            activeImageSelection.imageUrl = null;
+
+            let productName;
+            if (context === 'confirmation') {
+                productName = currentTicketData.productos[identifier].nombre;
+            } else { // 'edit'
+                const product = allUserProducts.find(p => p.id === identifier);
+                productName = product.nombre;
+            }
+
+            document.getElementById('image-modal-product-name').textContent = productName;
+            document.getElementById('image-prompt-input').value = '';
+            document.getElementById('upload-image-input').value = '';
+            const optionsContainer = document.getElementById('image-options-container');
+            optionsContainer.innerHTML = Array(4).fill(0).map(() => `<div class="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center"><div class="loader"></div></div>`).join('');
+            
+            showModal('image-selection-modal');
+
+            // Generate 4 suggested images
+            const prompts = [
+                `a clean product photo of ${productName}, on a white background`,
+                `icon of ${productName}, simple, clean background`,
+                `${productName}, studio lighting, plain background`,
+                `a single ${productName}, isolated on white`
+            ];
+            const imagePromises = prompts.map(p => generateImageWithPrompt(p, optionsContainer.children[prompts.indexOf(p)]));
+            const imageUrls = await Promise.all(imagePromises);
+
+            optionsContainer.innerHTML = '';
+            imageUrls.forEach(url => {
+                if (url) {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.className = "w-full h-32 object-cover rounded-lg cursor-pointer image-option";
+                    optionsContainer.appendChild(img);
+                }
+            });
+        }
+
+        async function generateCustomImage() {
+            const prompt = document.getElementById('image-prompt-input').value;
+            if (!prompt) {
+                showMessage("Atención", "Por favor, escribe una descripción para generar la imagen.");
+                return;
+            }
+            const container = document.getElementById('image-options-container');
+            const imageUrl = await generateImageWithPrompt(prompt, container);
+            if (imageUrl) {
+                 container.innerHTML = `<img src="${imageUrl}" alt="Imagen generada" class="w-full h-32 object-cover rounded-lg cursor-pointer image-option selected">`;
+                 activeImageSelection.imageUrl = imageUrl;
+            }
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const imageUrl = await fileToBase64(file);
+                const container = document.getElementById('image-options-container');
+                container.innerHTML = `<img src="${imageUrl}" alt="Imagen subida" class="w-full h-32 object-cover rounded-lg cursor-pointer image-option selected">`;
+                activeImageSelection.imageUrl = imageUrl;
+            }
+        }
+
+        function confirmImageSelection() {
+            if (!activeImageSelection.imageUrl) {
+                showMessage("Atención", "Por favor, selecciona o genera una imagen antes de confirmar.");
+                return;
+            }
+
+            if (activeImageSelection.context === 'confirmation') {
+                const index = activeImageSelection.index;
+                currentTicketData.productos[index].imageUrl = activeImageSelection.imageUrl;
+                const btn = document.getElementById(`product-image-btn-${index}`);
+                btn.innerHTML = `<i class="fas fa-check-circle text-green-500"></i>`;
+            } else { // 'edit'
+                const previewContainer = document.getElementById('edit-image-preview');
+                previewContainer.innerHTML = `<img src="${activeImageSelection.imageUrl}" class="w-40 h-40 object-cover rounded-lg">`;
+            }
+
+            hideModal('image-selection-modal');
+        }
+
     </script>
 </body>
 </html>
