@@ -712,7 +712,15 @@
                 const data = await response.json();
                 const jsonText = data.candidates[0].content.parts[0].text;
                 currentTicketData = JSON.parse(jsonText);
-                currentTicketData.productos.forEach(p => p.imageUrl = null);
+                
+                // FIX: Ensure quantity is at least 1
+                currentTicketData.productos.forEach(p => {
+                    p.imageUrl = null;
+                    if (!p.cantidad || p.cantidad <= 0) {
+                        p.cantidad = 1;
+                    }
+                });
+
                 showConfirmationModal(currentTicketData);
             } catch (error) {
                 console.error("Error processing ticket:", error);
@@ -913,10 +921,11 @@
                 let precioPromedio = 0;
 
                 if (purchaseHistory.length > 0) {
-                    totalUnidades = purchaseHistory.reduce((sum, item) => sum + item.cantidad, 0);
-                    ultimoPrecio = purchaseHistory[0].precio / purchaseHistory[0].cantidad;
-                    const totalCost = purchaseHistory.reduce((sum, item) => sum + item.precio, 0);
-                    precioPromedio = totalCost / totalUnidades;
+                    totalUnidades = purchaseHistory.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+                    ultimoPrecio = (purchaseHistory[0].precio || 0) / (purchaseHistory[0].cantidad || 1);
+                    const totalCost = purchaseHistory.reduce((sum, item) => sum + (item.precio || 0), 0);
+                    // FIX: Prevent division by zero
+                    precioPromedio = totalUnidades > 0 ? totalCost / totalUnidades : 0;
                 }
                 // --- END METRICS CALCULATION ---
 
@@ -958,7 +967,7 @@
                                                 <td class="px-4 py-2">${item.supermercado}</td>
                                                 <td class="px-4 py-2">${item.cantidad}</td>
                                                 <td class="px-4 py-2">${item.precio.toFixed(2)}€</td>
-                                                <td class="px-4 py-2">${(item.precio / item.cantidad).toFixed(2)}€</td>
+                                                <td class="px-4 py-2">${(item.precio / (item.cantidad || 1)).toFixed(2)}€</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
