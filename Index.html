@@ -713,12 +713,8 @@
                 const jsonText = data.candidates[0].content.parts[0].text;
                 currentTicketData = JSON.parse(jsonText);
                 
-                // FIX: Ensure quantity is at least 1
                 currentTicketData.productos.forEach(p => {
                     p.imageUrl = null;
-                    if (!p.cantidad || p.cantidad <= 0) {
-                        p.cantidad = 1;
-                    }
                 });
 
                 showConfirmationModal(currentTicketData);
@@ -1212,7 +1208,51 @@
         }
 
         // --- UTILITY & OTHER FUNCTIONS ---
-        function buildAIPrompt() { return `Analiza la imagen de este ticket de supermercado. Extrae la siguiente información en un formato JSON estricto. No incluyas nada fuera del objeto JSON. El JSON debe tener la siguiente estructura: { "supermercado": "string", "direccion_supermercado": "string", "fecha": "string", "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ], "total": number } Reglas de categorización (MUY IMPORTANTE): - Asigna a cada producto una categoría de los 3 niveles: categoria_principal, familia y subfamilia. - Utiliza ÚNICA Y EXCLUSIVAMENTE las siguientes categorías. No inventes ninguna. - Si un producto no encaja, usa 'OTROS GASTOS' -> 'Varios' -> 'Sin especificar'. Jerarquía de Categorías Permitidas: - 🛒 ALIMENTOS Y BEBIDAS: - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas] - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos] - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado] - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos] - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"] - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"] - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"] - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"] - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"] - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"] - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"] - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"] - 🏠 HOGAR Y LIMPIEZA: - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"] - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"] - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"] - 🧴 HIGIENE Y CUIDADO PERSONAL: - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"] - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"] - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"] - 🐾 MASCOTAS: - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"] - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"] - 💸 OTROS GASTOS: - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"] Analiza cuidadosamente cada línea del ticket para extraer el nombre, la cantidad y el precio. Si el precio no es claro, haz una estimación razonable. El total debe ser la suma de los precios de los productos.`; }
+        function buildAIPrompt() {
+            return `
+                Analiza la imagen de este ticket de supermercado. Extrae la información en un formato JSON estricto.
+
+                Reglas MUY IMPORTANTES para la extracción de productos:
+                1. Productos por unidad: Si un producto no tiene una cantidad explícita (ej. "QUESO BURGOS"), asume que la cantidad es 1.
+                2. Productos por peso/multi-línea: Algunos productos (fruta, carne, etc.) pueden tener su información de peso y precio por kg en la línea de abajo. Debes asociar esa línea con el nombre del producto de la línea superior para obtener el precio final. La cantidad para estos productos debe ser 1 (una unidad de compra).
+                3. Cantidad: El campo "cantidad" en el JSON debe ser siempre un número entero que represente las unidades. Debe ser SIEMPRE 1 O MAYOR.
+
+                El JSON debe tener la siguiente estructura:
+                {
+                  "supermercado": "string", "direccion_supermercado": "string", "fecha": "string",
+                  "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string" } ],
+                  "total": number
+                }
+
+                Jerarquía de Categorías Permitidas (USA SÓLO ESTAS):
+                - 🛒 ALIMENTOS Y BEBIDAS:
+                  - 🍓🥦 Frutas y Verduras: [🥬 Verduras, 🥔 Tubérculos, 🍄 Setas y Hongos, 🍎 Frutas Frescas, 🍇 Frutas Deshidratadas]
+                  - 🥩🍗 Carnes y Aves: [🐔 Aves, 🐄 Ternera, 🐖 Cerdo, 🐑 Cordero, 🌭 Embutidos]
+                  - 🐟🦐 Pescados y Mariscos: [🐠 Pescado Fresco, 🦞 Marisco Fresco, 🧊 Pescado Congelado, 🥫 Conservas de Pescado]
+                  - 🥛🥚 Lácteos y Huevos: [🥛 Leche, 🍮 Yogures y Postres Lácteos, 🧀 Quesos, 🥚 Huevos]
+                  - 🍞🥐 Panadería y Pastelería: ["🥖 Pan", "🍩 Bollería", "🍰 Pasteles", "🍪 Galletas"]
+                  - 🌾🫘 Cereales y Legumbres: ["🍚 Arroz", "🍝 Pasta", "🥣 Legumbres Secas", "🥣 Cereales de Desayuno"]
+                  - 🍾🍶 Aceites, Vinagres y Salsas: ["🫒 Aceites Comestibles", "🍇 Vinagres", "🥫 Salsas Preparadas", "🧂 Condimentos y Especias"]
+                  - 🥫🥡 Conservas y Platos Preparados: ["🫙 Conservas Vegetales", "🥩 Conservas Cárnicas", "🍲 Platos Listos para Consumir"]
+                  - 🧊 Congelados: ["🥦 Verduras Congeladas", "🐟 Pescado Congelado", "🍕 Comidas Preparadas Congeladas", "🍨 Helados"]
+                  - 🥤 Bebidas: ["🧃 Bebidas No Alcohólicas", "🍺 Bebidas Alcohólicas"]
+                  - 🥨🍬 Snacks y Dulces: ["🍟 Patatas Fritas y Aperitivos", "🍫 Chocolates y Golosinas", "🥜 Frutos Secos"]
+                  - ❤️‍🩹 Dietéticos y Especiales: ["🚫🌾 Sin Gluten", "🚫🥛 Sin Lactosa", "🌱 Orgánicos/Biológicos", "🌿 Vegetarianos/Veganos"]
+                - 🏠 HOGAR Y LIMPIEZA:
+                  - 🧼🧽 Productos de Limpieza: ["🧴 Limpiadores Multiusos", "🧺 Detergentes para Ropa", "🚽 Productos de Baño y Cocina", "🦟 Insecticidas"]
+                  - 🍴🍽️ Menaje y Utensilios: ["🍷 Vajilla y Cristalería", "🍳 Batería de Cocina", "🔌 Pequeños Electrodomésticos"]
+                  - 🏡 Cuidado del Hogar: ["🧻 Papel de Cocina y Servilletas", "🗑️ Bolsas de Basura", "🔋💡 Pilas y Bombillas", "🌬️ Ambientadores"]
+                - 🧴 HIGIENE Y CUIDADO PERSONAL:
+                  - 🚿🧼 Higiene Diaria: ["🧴 Champú y Acondicionador", "🧼 Gel de Ducha y Jabón", "🦷 Pasta de Dientes y Cuidado Bucal", "💨 Desodorantes"]
+                  - 💆‍♀️💅 Cuidado Facial y Corporal: ["🧴 Cremas y Lociones", "💄 Maquillaje", "☀️ Protector Solar"]
+                  - ⚕️💊 Farmacia/Parafarmacia: ["💊 Medicamentos Sin Receta", "💪 Suplementos y Vitaminas", "🩹 Material de Primeros Auxilios"]
+                - 🐾 MASCOTAS:
+                  - 🦴🍖 Alimento para Mascotas: ["🐶 Perros", "🐱 Gatos", "🐹 Otras Mascotas"]
+                  - 🧸 Accesorios para Mascotas: ["🎾 Juguetes", "🧼 Productos de Higiene para Mascotas"]
+                - 💸 OTROS GASTOS:
+                  - 🛍️ Varios: ["🎁 Regalos", "📰 Prensa y Revistas", "❓ Sin especificar"]
+            `;
+        }
         function buildShoppingSuggestionPrompt() { const pantryState = allUserProducts.map(p => { const { status, daysLeft } = getExpirationStatus(p); return `- ${p.nombre}: ${p.pantryStatus || 'in_stock'}. Estado de caducidad: ${status} (${daysLeft} días restantes).`; }).join('\n'); return `Eres un asistente de compras personal. Analiza el estado de la despensa de este usuario y sus hábitos de compra para sugerirle una lista de la compra inteligente. ESTADO ACTUAL DE LA DESPENSA:\n${pantryState}\nConsidera lo siguiente: 1. Prioriza los productos marcados como 'out_of_stock'. 2. Sugiere productos que estén a punto de caducar ('expiring_soon') si son de consumo frecuente. 3. No sugieras productos ya caducados ('expired'). Devuelve tu respuesta en un formato JSON estricto, con una única clave "sugerencias" que contenga un array de strings con los nombres de los productos a comprar. No incluyas nada más en la respuesta. Ejemplo de respuesta: { "sugerencias": ["Leche Fresca", "Plátanos", "Pechuga de Pollo"] }`; }
         function fileToDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
         function showMessage(title, message) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = message; showModal('message-modal'); }
