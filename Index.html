@@ -42,6 +42,8 @@
         .expiry-badge { padding: 0.125rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; }
         .view-toggle-btn.active { background-color: #4f46e5; color: white; }
         .view-toggle-btn { background-color: #e0e7ff; color: #4338ca; }
+        .product-history-row { display: none; }
+        .product-history-row.visible { display: table-row; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -158,19 +160,19 @@
 
                             <!-- Contenedor para las vistas -->
                             <div id="pantry-view-container">
-                                <!-- Vista de Grid (antes Despensa Virtual) -->
+                                <!-- Vista de Grid -->
                                 <div id="pantry-grid-view" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
-                                <!-- Vista de Lista (antes Mis Productos) -->
+                                <!-- Vista de Lista con Métricas -->
                                 <div id="pantry-list-view" class="hidden overflow-x-auto">
                                     <table class="w-full text-sm text-left text-gray-500">
                                         <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                                             <tr>
-                                                <th scope="col" class="px-6 py-3">Imagen</th>
                                                 <th scope="col" class="px-6 py-3">Producto</th>
                                                 <th scope="col" class="px-6 py-3">Estado</th>
-                                                <th scope="col" class="px-6 py-3">Categoría</th>
-                                                <th scope="col" class="px-6 py-3">Nº Compras</th>
-                                                <th scope="col" class="px-6 py-3">Acciones</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Total Unidades</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Último Precio</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Precio Prom.</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody id="products-table-body"></tbody>
@@ -889,31 +891,84 @@
 
         function renderPantryListView(products) {
             const tbody = document.getElementById('products-table-body');
-            const productCounts = allPurchases.flatMap(p => p.productos).reduce((acc, prod) => {
-                const key = prod.nombre.toLowerCase();
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
-
             if (products.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">No se encontraron productos.</td></tr>';
                 return;
             }
-            tbody.innerHTML = products.map(p => {
-                const count = productCounts[p.nombre.toLowerCase()] || 0;
+
+            let html = '';
+            products.forEach(p => {
                 const imageHtml = p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.nombre}" class="w-12 h-12 object-cover rounded-md">` : `<div class="product-image-placeholder w-12 h-12 flex items-center justify-center rounded-md"><i class="fas fa-camera"></i></div>`;
                 const { badge } = getExpirationStatus(p);
                 const isInStock = (p.pantryStatus || 'in_stock') === 'in_stock';
+                
+                // --- METRICS CALCULATION ---
+                const purchaseHistory = allPurchases
+                    .flatMap(ticket => ticket.productos.map(prod => ({...prod, fecha: ticket.fecha, supermercado: ticket.supermercado})))
+                    .filter(prod => prod.nombre === p.nombre)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-                return `<tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-6 py-4">${imageHtml}</td>
-                    <td class="px-6 py-4 font-medium text-gray-900">${p.nombre}</td>
-                    <td class="px-6 py-4">${isInStock ? badge : '<span class="expiry-badge bg-gray-100 text-gray-800">Agotado</span>'}</td>
-                    <td class="px-6 py-4">${p.categoria_principal}</td>
-                    <td class="px-6 py-4 text-center">${count}</td>
-                    <td class="px-6 py-4 text-center"><button data-action="edit-product" data-id="${p.id}" class="text-indigo-600 hover:text-indigo-900"><i class="fas fa-pencil-alt"></i></button></td>
-                </tr>`;
-            }).join('');
+                let totalUnidades = 0;
+                let ultimoPrecio = 0;
+                let precioPromedio = 0;
+
+                if (purchaseHistory.length > 0) {
+                    totalUnidades = purchaseHistory.reduce((sum, item) => sum + item.cantidad, 0);
+                    ultimoPrecio = purchaseHistory[0].precio / purchaseHistory[0].cantidad;
+                    const totalCost = purchaseHistory.reduce((sum, item) => sum + item.precio, 0);
+                    precioPromedio = totalCost / totalUnidades;
+                }
+                // --- END METRICS CALCULATION ---
+
+                html += `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                ${imageHtml}
+                                <span class="font-medium text-gray-900">${p.nombre}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">${isInStock ? badge : '<span class="expiry-badge bg-gray-100 text-gray-800">Agotado</span>'}</td>
+                        <td class="px-6 py-4 text-center">${totalUnidades}</td>
+                        <td class="px-6 py-4 text-center">${ultimoPrecio.toFixed(2)}€</td>
+                        <td class="px-6 py-4 text-center">${precioPromedio.toFixed(2)}€</td>
+                        <td class="px-6 py-4 text-center">
+                            <button data-action="edit-product" data-id="${p.id}" class="text-indigo-600 hover:text-indigo-900 p-2"><i class="fas fa-pencil-alt"></i></button>
+                            <button data-action="toggle-history" data-id="${p.id}" class="text-gray-500 hover:text-gray-800 p-2"><i class="fas fa-chevron-down"></i></button>
+                        </td>
+                    </tr>
+                    <tr class="product-history-row" id="history-for-${p.id}">
+                        <td colspan="6" class="p-0">
+                            <div class="p-4 bg-gray-50">
+                                <h4 class="font-semibold mb-2 text-sm">Historial de Compras para ${p.nombre}</h4>
+                                <table class="w-full text-xs text-left">
+                                    <thead class="bg-gray-200">
+                                        <tr>
+                                            <th class="px-4 py-2">Fecha</th>
+                                            <th class="px-4 py-2">Supermercado</th>
+                                            <th class="px-4 py-2">Cantidad</th>
+                                            <th class="px-4 py-2">Precio Total</th>
+                                            <th class="px-4 py-2">Precio/Ud.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${purchaseHistory.map(item => `
+                                            <tr class="border-b">
+                                                <td class="px-4 py-2">${item.fecha}</td>
+                                                <td class="px-4 py-2">${item.supermercado}</td>
+                                                <td class="px-4 py-2">${item.cantidad}</td>
+                                                <td class="px-4 py-2">${item.precio.toFixed(2)}€</td>
+                                                <td class="px-4 py-2">${(item.precio / item.cantidad).toFixed(2)}€</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
         }
 
         async function handlePantryActions(e) {
@@ -932,6 +987,12 @@
                 addShoppingListItem(null, productName);
             } else if (action === 'edit-product') {
                 openEditProductModal(productId);
+            } else if (action === 'toggle-history') {
+                const historyRow = document.getElementById(`history-for-${productId}`);
+                historyRow.classList.toggle('visible');
+                const icon = targetElement.querySelector('i');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
             }
         }
         
