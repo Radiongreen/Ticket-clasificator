@@ -920,7 +920,6 @@
                     totalUnidades = purchaseHistory.reduce((sum, item) => sum + (item.cantidad || 0), 0);
                     ultimoPrecio = (purchaseHistory[0].precio || 0) / (purchaseHistory[0].cantidad || 1);
                     const totalCost = purchaseHistory.reduce((sum, item) => sum + (item.precio || 0), 0);
-                    // FIX: Prevent division by zero
                     precioPromedio = totalUnidades > 0 ? totalCost / totalUnidades : 0;
                 }
                 // --- END METRICS CALCULATION ---
