@@ -582,8 +582,8 @@
             });
             
             currentFilteredPurchases = basePurchases.filter(p => {
-                const supermarketMatch = !chartFilter.value || (chartFilter.type === 'supermarket' && p.supermercado === chartFilter.value);
-                const categoryMatch = !chartFilter.value || (chartFilter.type !== 'supermarket') || p.productos.some(prod => prod.categoria_principal === chartFilter.value);
+                const supermarketMatch = chartFilter.type !== 'supermarket' || p.supermercado === chartFilter.value;
+                const categoryMatch = chartFilter.type !== 'category' || p.productos.some(prod => prod.categoria_principal === chartFilter.value);
                 return supermarketMatch && categoryMatch;
             });
             
@@ -1326,19 +1326,23 @@
         }
 
         async function migrateOldTickets() {
+            const outdatedTickets = allPurchases.filter(ticket => !ticket.dataVersion || ticket.dataVersion < CURRENT_DATA_VERSION);
+            if (outdatedTickets.length === 0) {
+                showMessage("Información", "Todos tus datos ya están actualizados.");
+                return;
+            }
+
             processingOverlay.classList.remove('hidden');
-            processingText.textContent = `Actualizando ${allPurchases.length} tickets...`;
+            processingText.textContent = `Actualizando ${outdatedTickets.length} tickets...`;
             try {
                 const batch = writeBatch(db);
-                allPurchases.forEach(ticket => {
-                    if (!ticket.dataVersion || ticket.dataVersion < CURRENT_DATA_VERSION) {
-                        const ticketRef = doc(db, "tickets", ticket.id);
-                        const correctedData = postProcessTicketData({ productos: ticket.productos });
-                        batch.update(ticketRef, { 
-                            productos: correctedData.productos,
-                            dataVersion: CURRENT_DATA_VERSION 
-                        });
-                    }
+                outdatedTickets.forEach(ticket => {
+                    const ticketRef = doc(db, "tickets", ticket.id);
+                    const correctedData = postProcessTicketData({ productos: ticket.productos });
+                    batch.update(ticketRef, { 
+                        productos: correctedData.productos,
+                        dataVersion: CURRENT_DATA_VERSION 
+                    });
                 });
                 await batch.commit();
                 showMessage("Éxito", "Todos tus tickets han sido actualizados a la última versión.");
