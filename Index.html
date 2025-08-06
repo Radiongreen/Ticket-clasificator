@@ -711,7 +711,12 @@
                 }
                 const data = await response.json();
                 const jsonText = data.candidates[0].content.parts[0].text;
-                currentTicketData = JSON.parse(jsonText);
+                let parsedData = JSON.parse(jsonText);
+                
+                // Post-procesamiento de los datos para corregir errores comunes de la IA
+                parsedData = postProcessTicketData(parsedData);
+
+                currentTicketData = parsedData;
                 
                 currentTicketData.productos.forEach(p => {
                     p.imageUrl = null;
@@ -724,6 +729,21 @@
             } finally {
                 processingOverlay.classList.add('hidden');
             }
+        }
+
+        function postProcessTicketData(data) {
+            const processedProducts = [];
+            for (let i = 0; i < data.productos.length; i++) {
+                let currentProduct = data.productos[i];
+
+                // Regla de seguridad: si la cantidad es 0 o nula, poner 1
+                if (!currentProduct.cantidad || currentProduct.cantidad <= 0) {
+                    currentProduct.cantidad = 1;
+                }
+                processedProducts.push(currentProduct);
+            }
+            data.productos = processedProducts;
+            return data;
         }
 
         function showConfirmationModal(data) {
