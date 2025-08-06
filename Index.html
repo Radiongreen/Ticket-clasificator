@@ -1315,6 +1315,42 @@
         async function joinHousehold() { const idInput = document.getElementById('join-household-id-input'); const householdId = idInput.value.trim(); if (!householdId) return showMessage("Error", "Por favor, introduce un ID de hogar válido."); processingOverlay.classList.remove('hidden'); processingText.textContent = "Uniéndote al hogar..."; try { const householdRef = doc(db, "households", householdId); const householdDoc = await getDoc(householdRef); if (!householdDoc.exists()) throw new Error("El hogar no existe."); const batch = writeBatch(db); const userRef = doc(db, "users", currentUser.uid); const memberData = { [`members.${currentUser.uid}`]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } }; batch.update(householdRef, memberData); batch.update(userRef, { householdId: householdId }); await batch.commit(); showMessage("Éxito", "Te has unido al hogar correctamente."); } catch (error) { console.error("Error joining household: ", error); showMessage("Error", `No se pudo unir al hogar. ${error.message}`); } finally { processingOverlay.classList.add('hidden'); } }
         async function leaveHousehold() { if (!userProfile || !userProfile.householdId) return; processingOverlay.classList.remove('hidden'); processingText.textContent = "Abandonando el hogar..."; try { const batch = writeBatch(db); const householdRef = doc(db, "households", userProfile.householdId); const userRef = doc(db, "users", currentUser.uid); batch.update(householdRef, { [`members.${currentUser.uid}`]: deleteField() }); batch.update(userRef, { householdId: null }); await batch.commit(); showMessage("Éxito", "Has abandonado el hogar."); } catch (error) { console.error("Error leaving household:", error); showMessage("Error", "No se pudo abandonar el hogar."); } finally { processingOverlay.classList.add('hidden'); } }
 
+        // --- DATA MIGRATION ---
+        function checkForOutdatedData() {
+            const outdatedTickets = allPurchases.filter(ticket => !ticket.dataVersion || ticket.dataVersion < CURRENT_DATA_VERSION);
+            if (outdatedTickets.length > 0) {
+                document.getElementById('migration-banner').classList.remove('hidden');
+            } else {
+                document.getElementById('migration-banner').classList.add('hidden');
+            }
+        }
+
+        async function migrateOldTickets() {
+            processingOverlay.classList.remove('hidden');
+            processingText.textContent = `Actualizando ${allPurchases.length} tickets...`;
+            try {
+                const batch = writeBatch(db);
+                allPurchases.forEach(ticket => {
+                    if (!ticket.dataVersion || ticket.dataVersion < CURRENT_DATA_VERSION) {
+                        const ticketRef = doc(db, "tickets", ticket.id);
+                        const correctedData = postProcessTicketData({ productos: ticket.productos });
+                        batch.update(ticketRef, { 
+                            productos: correctedData.productos,
+                            dataVersion: CURRENT_DATA_VERSION 
+                        });
+                    }
+                });
+                await batch.commit();
+                showMessage("Éxito", "Todos tus tickets han sido actualizados a la última versión.");
+                document.getElementById('migration-banner').classList.add('hidden');
+            } catch (error) {
+                console.error("Error migrating data:", error);
+                showMessage("Error", "No se pudieron actualizar los datos antiguos.");
+            } finally {
+                processingOverlay.classList.add('hidden');
+            }
+        }
+
         // --- APP INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', setupEventListeners);
         window.addEventListener('click', (e) => {
