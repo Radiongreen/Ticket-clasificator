@@ -582,9 +582,10 @@
             });
             
             currentFilteredPurchases = basePurchases.filter(p => {
-                const supermarketMatch = chartFilter.type !== 'supermarket' || p.supermercado === chartFilter.value;
-                const categoryMatch = chartFilter.type !== 'category' || p.productos.some(prod => prod.categoria_principal === chartFilter.value);
-                return supermarketMatch && categoryMatch;
+                if (chartFilter.type === 'supermarket') {
+                    return p.supermercado === chartFilter.value;
+                }
+                return true;
             });
             
             renderSummaryCards();
@@ -672,11 +673,8 @@
         function renderCategoryChart() {
             const ctx = document.getElementById('category-chart').getContext('2d');
             const data = {};
-            let purchasesForChart = currentFilteredPurchases;
-            if (chartFilter.type === 'supermarket') {
-                purchasesForChart = currentFilteredPurchases.filter(p => p.supermercado === chartFilter.value);
-            }
-            purchasesForChart.forEach(purchase => {
+            
+            currentFilteredPurchases.forEach(purchase => {
                 purchase.productos.forEach(product => {
                     let key;
                     if (categoryChartLevel === 1) key = product.categoria_principal;
