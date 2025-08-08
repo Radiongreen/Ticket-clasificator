@@ -397,21 +397,33 @@
             if (!currentUser) return;
             unsubscribePurchases();
             const ticketsQuery = query(collection(db, "tickets"), where("userId", "==", currentUser.uid));
-            unsubscribePurchases = onSnapshot(ticketsQuery, (snapshot) => {
-                allPurchases = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                populateFilters();
-                renderDashboard();
-            }, error => console.error("Error loading purchases:", error));
+            return new Promise((resolve, reject) => {
+                unsubscribePurchases = onSnapshot(ticketsQuery, (snapshot) => {
+                    allPurchases = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    populateFilters();
+                    renderDashboard();
+                    resolve();
+                }, error => {
+                    console.error("Error loading purchases:", error);
+                    reject(error);
+                });
+            });
         }
         
         function loadProducts() {
             if (!currentUser) return;
             unsubscribeProducts();
             const productsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
-            unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
-                allUserProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                renderPantry();
-            }, error => console.error("Error loading products:", error));
+            return new Promise((resolve, reject) => {
+                unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+                    allUserProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderPantry();
+                    resolve();
+                }, error => {
+                    console.error("Error loading products:", error);
+                    reject(error);
+                });
+            });
         }
 
         // --- EVENT LISTENERS ---
@@ -927,7 +939,6 @@
                 const { badge } = getExpirationStatus(p);
                 const isInStock = (p.pantryStatus || 'in_stock') === 'in_stock';
                 
-                // --- METRICS CALCULATION ---
                 const purchaseHistory = allPurchases
                     .flatMap(ticket => ticket.productos.map(prod => ({...prod, fecha: ticket.fecha, supermercado: ticket.supermercado})))
                     .filter(prod => prod.nombre === p.nombre)
@@ -938,12 +949,11 @@
                 let precioPromedio = 0;
 
                 if (purchaseHistory.length > 0) {
-                    totalUnidades = purchaseHistory.reduce((sum, item) => sum + (item.cantidad || 0), 0);
+                    totalUnidades = purchaseHistory.reduce((sum, item) => sum + (item.cantidad || 1), 0); // Usar 1 si la cantidad es 0 o nula
                     ultimoPrecio = (purchaseHistory[0].precio || 0) / (purchaseHistory[0].cantidad || 1);
                     const totalCost = purchaseHistory.reduce((sum, item) => sum + (item.precio || 0), 0);
                     precioPromedio = totalUnidades > 0 ? totalCost / totalUnidades : 0;
                 }
-                // --- END METRICS CALCULATION ---
 
                 html += `
                     <tr class="bg-white border-b hover:bg-gray-50">
@@ -981,9 +991,9 @@
                                             <tr class="border-b">
                                                 <td class="px-4 py-2">${item.fecha}</td>
                                                 <td class="px-4 py-2">${item.supermercado}</td>
-                                                <td class="px-4 py-2">${item.cantidad}</td>
-                                                <td class="px-4 py-2">${item.precio.toFixed(2)}€</td>
-                                                <td class="px-4 py-2">${(item.precio / (item.cantidad || 1)).toFixed(2)}€</td>
+                                                <td class="px-4 py-2">${item.cantidad || 1}</td>
+                                                <td class="px-4 py-2">${(item.precio || 0).toFixed(2)}€</td>
+                                                <td class="px-4 py-2">${((item.precio || 0) / (item.cantidad || 1)).toFixed(2)}€</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -1304,32 +1314,72 @@
 
         // --- DATA MIGRATION ---
         async function migrateOldTickets() {
-            const ticketsToUpdate = allPurchases;
+            const ticketsToUpdate = allPurchases.filter(t => t.dataVersion !== CURRENT_DATA_VERSION);
             if (ticketsToUpdate.length === 0) {
-                showMessage("Información", "No hay tickets para actualizar.");
+                showMessage("Información", "¡Buenas noticias! Todos tus datos ya están actualizados a la última versión.");
                 return;
             }
 
             processingOverlay.classList.remove('hidden');
-            processingText.textContent = `Actualizando ${ticketsToUpdate.length} tickets...`;
+            processingText.textContent = `Actualizando ${ticketsToUpdate.length} compra(s) antiguas...`;
+            
             try {
                 const batch = writeBatch(db);
+                const productUpdates = new Map(); // Para asegurar que actualizamos cada producto solo una vez con la fecha más antigua
+
+                // 1. Iterar sobre los tickets a actualizar
                 ticketsToUpdate.forEach(ticket => {
                     const ticketRef = doc(db, "tickets", ticket.id);
-                    const correctedData = postProcessTicketData({ productos: ticket.productos });
+                    const correctedProducts = ticket.productos.map(p => {
+                        const newProd = { ...p };
+                        // CORRECCIÓN: Asegurar que la cantidad es al menos 1
+                        if (!newProd.cantidad || newProd.cantidad <= 0) {
+                            newProd.cantidad = 1;
+                        }
+                        return newProd;
+                    });
+                    
+                    // Actualizar el ticket en el batch
                     batch.update(ticketRef, { 
-                        productos: correctedData.productos,
+                        productos: correctedProducts,
                         dataVersion: CURRENT_DATA_VERSION 
                     });
+
+                    // 2. Preparar actualizaciones para la colección 'products'
+                    correctedProducts.forEach(p => {
+                        const sanitizedProductName = p.nombre.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+                        const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
+                        
+                        // Queremos la fecha de compra más antigua para calcular la caducidad correctamente
+                        const existingUpdate = productUpdates.get(productDocId);
+                        if (!existingUpdate || new Date(ticket.fecha) < new Date(existingUpdate.purchaseDate)) {
+                            productUpdates.set(productDocId, {
+                                purchaseDate: ticket.fecha
+                            });
+                        }
+                    });
                 });
+
+                // 3. Añadir las actualizaciones de 'products' al batch
+                for (const [productId, updateData] of productUpdates.entries()) {
+                    const productRef = doc(db, "products", productId);
+                    batch.update(productRef, updateData);
+                }
+                
+                // 4. Ejecutar todas las operaciones
                 await batch.commit();
-                showMessage("Éxito", "Todos tus tickets han sido actualizados. Recargando datos...");
-                // Forzar recarga de datos para ver los cambios inmediatamente
-                loadInitialData();
-                loadProducts();
+
+                // 5. Forzar recarga de datos y refresco visual
+                await loadInitialData();
+                await loadProducts();
+                renderDashboard(); // Refresco explícito del dashboard
+                renderPantry();    // Refresco explícito de la despensa
+
+                showMessage("Éxito", `${ticketsToUpdate.length} compra(s) han sido actualizadas. Tus datos ahora son consistentes.`);
+
             } catch (error) {
                 console.error("Error migrating data:", error);
-                showMessage("Error", "No se pudieron actualizar los datos antiguos.");
+                showMessage("Error", `Ocurrió un error al actualizar los datos antiguos. Detalles: ${error.message}`);
             } finally {
                 processingOverlay.classList.add('hidden');
             }
