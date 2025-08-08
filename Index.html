@@ -581,12 +581,14 @@
                 return yearMatch && monthMatch && contextMatch;
             });
             
-            currentFilteredPurchases = basePurchases.filter(p => {
-                if (chartFilter.type === 'supermarket') {
-                    return p.supermercado === chartFilter.value;
-                }
-                return true;
-            });
+            if (chartFilter.type === 'supermarket') {
+                currentFilteredPurchases = basePurchases.filter(p => p.supermercado === chartFilter.value);
+            } else if (chartFilter.type === 'category') {
+                 currentFilteredPurchases = basePurchases.filter(p => p.productos.some(prod => prod.categoria_principal === chartFilter.value));
+            }
+            else {
+                currentFilteredPurchases = basePurchases;
+            }
             
             renderSummaryCards();
             renderSupermarketChart();
