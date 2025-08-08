@@ -480,10 +480,9 @@
             document.getElementById('select-all-checkbox').addEventListener('change', handleSelectAll);
             document.getElementById('delete-selected-btn').addEventListener('click', confirmDeleteSelected);
             document.getElementById('category-chart-back-btn').addEventListener('click', handleCategoryChartBack);
-            document.getElementById('update-all-tickets-btn').addEventListener('click', migrateOldTickets);
-
 
             // Mi Despensa
+            document.getElementById('update-all-tickets-btn').addEventListener('click', migrateOldTickets);
             document.getElementById('view-toggle-grid').addEventListener('click', () => setPantryView('grid'));
             document.getElementById('view-toggle-list').addEventListener('click', () => setPantryView('list'));
             document.getElementById('pantry-search-input').addEventListener('input', renderPantry);
@@ -1304,17 +1303,8 @@
         async function leaveHousehold() { if (!userProfile || !userProfile.householdId) return; processingOverlay.classList.remove('hidden'); processingText.textContent = "Abandonando el hogar..."; try { const batch = writeBatch(db); const householdRef = doc(db, "households", userProfile.householdId); const userRef = doc(db, "users", currentUser.uid); batch.update(householdRef, { [`members.${currentUser.uid}`]: deleteField() }); batch.update(userRef, { householdId: null }); await batch.commit(); showMessage("Éxito", "Has abandonado el hogar."); } catch (error) { console.error("Error leaving household:", error); showMessage("Error", "No se pudo abandonar el hogar."); } finally { processingOverlay.classList.add('hidden'); } }
 
         // --- DATA MIGRATION ---
-        function checkForOutdatedData() {
-            const outdatedTickets = allPurchases.filter(ticket => !ticket.dataVersion || ticket.dataVersion < CURRENT_DATA_VERSION);
-            if (outdatedTickets.length > 0) {
-                document.getElementById('migration-banner').classList.remove('hidden');
-            } else {
-                document.getElementById('migration-banner').classList.add('hidden');
-            }
-        }
-
         async function migrateOldTickets() {
-            const ticketsToUpdate = allPurchases; // Actualizar todos los tickets cada vez que se pulsa
+            const ticketsToUpdate = allPurchases;
             if (ticketsToUpdate.length === 0) {
                 showMessage("Información", "No hay tickets para actualizar.");
                 return;
@@ -1333,7 +1323,10 @@
                     });
                 });
                 await batch.commit();
-                showMessage("Éxito", "Todos tus tickets han sido actualizados a la última versión.");
+                showMessage("Éxito", "Todos tus tickets han sido actualizados. Recargando datos...");
+                // Forzar recarga de datos para ver los cambios inmediatamente
+                loadInitialData();
+                loadProducts();
             } catch (error) {
                 console.error("Error migrating data:", error);
                 showMessage("Error", "No se pudieron actualizar los datos antiguos.");
