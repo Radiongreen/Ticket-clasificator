@@ -583,10 +583,7 @@
             
             if (chartFilter.type === 'supermarket') {
                 currentFilteredPurchases = basePurchases.filter(p => p.supermercado === chartFilter.value);
-            } else if (chartFilter.type === 'category') {
-                 currentFilteredPurchases = basePurchases.filter(p => p.productos.some(prod => prod.categoria_principal === chartFilter.value));
-            }
-            else {
+            } else {
                 currentFilteredPurchases = basePurchases;
             }
             
