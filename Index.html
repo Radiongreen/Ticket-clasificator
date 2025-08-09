@@ -1345,7 +1345,7 @@
         }
 
 
-        // --- DATA MIGRATION ---
+        // --- DATA MIGRATION (REVISED) ---
         async function migrateOldTickets() {
             const ticketsToUpdate = allPurchases.filter(t => t.dataVersion !== CURRENT_DATA_VERSION);
             if (ticketsToUpdate.length === 0) {
@@ -1354,74 +1354,91 @@
             }
 
             processingOverlay.classList.remove('hidden');
-            let processedCount = 0;
+            processingText.textContent = "Iniciando migración de datos...";
 
-            // Borrar productos antiguos para evitar duplicados
-            const oldProductsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
-            const oldProductsSnapshot = await getDocs(oldProductsQuery);
-            const deleteBatch = writeBatch(db);
-            oldProductsSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
-            await deleteBatch.commit();
-            console.log("Productos antiguos eliminados. Empezando migración...");
+            try {
+                // 1. Borrar todos los productos existentes para empezar de cero y evitar duplicados.
+                const productsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
+                const productsSnapshot = await getDocs(productsQuery);
+                const deleteBatch = writeBatch(db);
+                productsSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
+                await deleteBatch.commit();
+                console.log("Productos existentes eliminados para la migración.");
 
-            for (const ticket of ticketsToUpdate) {
-                processedCount++;
-                processingText.textContent = `Procesando ticket ${processedCount} de ${ticketsToUpdate.length}...`;
-                
-                try {
-                    await runTransaction(db, async (transaction) => {
-                        const ticketRef = doc(db, "tickets", ticket.id);
-                        
-                        const newProducts = [];
-                        for (const p of ticket.productos) {
-                            const normalizedName = await normalizeProductName(p.nombre);
-                            const correctedProduct = {
-                                ...p,
+                // 2. Procesar todos los tickets y normalizar nombres
+                const allNormalizedProducts = new Map();
+                let processedCount = 0;
+
+                for (const ticket of allPurchases) { // Procesar TODOS los tickets, no solo los que necesitan actualización
+                    processedCount++;
+                    processingText.textContent = `Analizando ticket ${processedCount} de ${allPurchases.length}...`;
+                    
+                    for (const product of ticket.productos) {
+                        const normalizedName = await normalizeProductName(product.nombre);
+                        if (!allNormalizedProducts.has(normalizedName)) {
+                            allNormalizedProducts.set(normalizedName, {
+                                userId: currentUser.uid,
                                 nombre: normalizedName,
-                                cantidad: p.cantidad || 1
-                            };
-                            newProducts.push(correctedProduct);
-
-                            const sanitizedProductName = normalizedName.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-                            const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
-                            const productRef = doc(db, "products", productDocId);
-                            const productDoc = await transaction.get(productRef);
-
-                            if (productDoc.exists()) {
-                                transaction.update(productRef, { lastUpdate: serverTimestamp() });
-                            } else {
-                                transaction.set(productRef, {
-                                    userId: currentUser.uid,
-                                    nombre: normalizedName,
-                                    categoria_principal: p.categoria_principal,
-                                    familia: p.familia,
-                                    subfamilia: p.subfamilia,
-                                    imageUrl: p.imageUrl || null,
-                                    pantryStatus: 'in_stock',
-                                    purchaseDate: ticket.fecha,
-                                    lastUpdate: serverTimestamp()
-                                });
+                                categoria_principal: product.categoria_principal,
+                                familia: product.familia,
+                                subfamilia: product.subfamilia,
+                                imageUrl: product.imageUrl || null,
+                                pantryStatus: 'in_stock',
+                                purchaseDate: ticket.fecha, // Usamos la fecha del primer ticket donde aparece
+                                lastUpdate: serverTimestamp()
+                            });
+                        } else {
+                            // Si ya existe, nos aseguramos de que tenga la fecha de compra más antigua
+                            const existingProduct = allNormalizedProducts.get(normalizedName);
+                            if (new Date(ticket.fecha) < new Date(existingProduct.purchaseDate)) {
+                                existingProduct.purchaseDate = ticket.fecha;
                             }
                         }
-                        
-                        transaction.update(ticketRef, { 
-                            productos: newProducts,
-                            dataVersion: CURRENT_DATA_VERSION 
-                        });
-                    });
-                } catch (error) {
-                    console.error(`Error migrando el ticket ${ticket.id}:`, error);
-                    showMessage("Error", `Ocurrió un error al migrar el ticket ${ticket.id}. Revisa la consola para más detalles.`);
-                    processingOverlay.classList.add('hidden');
-                    return; 
+                    }
                 }
-            }
 
-            processingOverlay.classList.add('hidden');
-            showMessage("Éxito", `¡Migración completada! Se procesaron ${ticketsToUpdate.length} tickets.`);
-            // Forzar recarga de datos
-            await loadInitialData();
-            await loadProducts();
+                // 3. Escribir los nuevos productos consolidados y actualizar los tickets
+                const finalBatch = writeBatch(db);
+                processingText.textContent = "Guardando datos consolidados...";
+
+                // Escribir los productos consolidados
+                for (const [normalizedName, productData] of allNormalizedProducts.entries()) {
+                    const sanitizedProductName = normalizedName.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+                    const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
+                    const productRef = doc(db, "products", productDocId);
+                    finalBatch.set(productRef, productData);
+                }
+
+                // Actualizar todos los tickets con los nombres normalizados
+                for (const ticket of allPurchases) {
+                    const ticketRef = doc(db, "tickets", ticket.id);
+                    const updatedProductos = [];
+                    for (const p of ticket.productos) {
+                        const normalizedName = await normalizeProductName(p.nombre);
+                        updatedProductos.push({
+                            ...p,
+                            nombre: normalizedName,
+                            cantidad: p.cantidad || 1
+                        });
+                    }
+                    finalBatch.update(ticketRef, {
+                        productos: updatedProductos,
+                        dataVersion: CURRENT_DATA_VERSION
+                    });
+                }
+
+                await finalBatch.commit();
+
+                showMessage("Éxito", `¡Migración completada! Se han consolidado y actualizado todos tus datos.`);
+            } catch (error) {
+                console.error("Error durante la migración:", error);
+                showMessage("Error", `Ocurrió un error crítico durante la migración. Revisa la consola.`);
+            } finally {
+                processingOverlay.classList.add('hidden');
+                // Forzar recarga de datos
+                await loadInitialData();
+                await loadProducts();
+            }
         }
 
 
