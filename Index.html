@@ -262,7 +262,7 @@
         // Importaciones de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, writeBatch, deleteDoc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, deleteField, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- CONFIGURACIÓN E INICIALIZACIÓN ---
         const firebaseConfig = {
@@ -275,7 +275,7 @@
           measurementId: "G-FW5ER1GV03"
         };
         const pexelsApiKey = 'UMGuZOf0eoG0PlIeMIXwbR5e6ErRqrCVKDvKWIG5S01DvvV7ZnaUsviz';
-        const CURRENT_DATA_VERSION = 2; // <-- Versión actual de la lógica de datos
+        const CURRENT_DATA_VERSION = 3; // <-- Incrementamos la versión para forzar la nueva migración
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -304,6 +304,8 @@
         let currentPantryFilter = 'in_stock';
         let shoppingList = [];
         let currentPantryView = 'grid';
+        const productNameCache = new Map();
+
 
         // --- DEFINICIÓN DE CATEGORÍAS Y CADUCIDAD ---
         const categorias = {
@@ -842,6 +844,12 @@
 
             try {
                 const batch = writeBatch(db);
+                
+                // Normalizar nombres antes de guardar
+                for (const product of currentTicketData.productos) {
+                    product.nombre = await normalizeProductName(product.nombre);
+                }
+
                 const ticketRef = doc(collection(db, "tickets"));
                 batch.set(ticketRef, {
                     userId: currentUser.uid, householdId: ticketHouseholdId,
@@ -849,7 +857,7 @@
                     direccion_supermercado: currentTicketData.direccion_supermercado || null,
                     fecha: currentTicketData.fecha, total: currentTicketData.total,
                     productos: currentTicketData.productos, createdAt: serverTimestamp(),
-                    dataVersion: CURRENT_DATA_VERSION // <-- Añadir la versión de los datos
+                    dataVersion: CURRENT_DATA_VERSION
                 });
 
                 for (const product of currentTicketData.productos) {
@@ -1290,7 +1298,7 @@
         function showModal(id) { const modal = document.getElementById(id); modal.classList.remove('hidden'); setTimeout(() => modal.classList.remove('opacity-0'), 10); }
         function hideModal(id) { const modal = document.getElementById(id); modal.classList.add('opacity-0'); setTimeout(() => modal.classList.add('hidden'), 300); }
         function showWelcomeModal() { showModal('welcome-modal'); }
-        function resetAppState() { allPurchases = []; allUserProducts = []; currentFilteredPurchases = []; selectedPurchases.clear(); if (supermarketChart) supermarketChart.destroy(); if (categoryChart) categoryChart.destroy(); resetTicketAnalysis(); document.getElementById('purchases-history').innerHTML = ''; document.getElementById('pantry-grid-view').innerHTML = ''; document.getElementById('products-table-body').innerHTML = ''; shoppingList = []; renderShoppingList(); }
+        function resetAppState() { allPurchases = []; allUserProducts = []; currentFilteredPurchases = []; selectedPurchases.clear(); if (supermarketChart) supermarketChart.destroy(); if (categoryChart) categoryChart.destroy(); resetTicketAnalysis(); document.getElementById('purchases-history').innerHTML = ''; document.getElementById('pantry-grid-view').innerHTML = ''; document.getElementById('products-table-body').innerHTML = ''; shoppingList = []; renderShoppingList(); productNameCache.clear(); }
         function resetTicketAnalysis() { currentFile = null; currentTicketData = null; document.getElementById('file-upload').value = ''; document.getElementById('image-preview-container').innerHTML = '<p>Aquí verás la imagen de tu ticket.</p>'; document.getElementById('process-ticket-btn').disabled = true; }
         function populateFilters() { const years = [...new Set(allPurchases.map(p => new Date(p.fecha).getFullYear()))].sort((a, b) => b - a); const yearSelect = document.getElementById('filter-year'); yearSelect.innerHTML = '<option value="all">Todos los Años</option>' + years.map(y => `<option value="${y}">${y}</option>`).join(''); const monthSelect = document.getElementById('filter-month'); const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]; monthSelect.innerHTML = '<option value="all">Todos los Meses</option>' + months.map((m, i) => `<option value="${i+1}">${m}</option>`).join(''); }
         function updateContextFilter(profile) { const contextSelect = document.getElementById('context-filter'); let options = '<option value="personal">Gastos Personales</option>'; if (profile && profile.householdId) { options += `<option value="household">Gastos del Hogar</option>`; } options += '<option value="all">Ver Todo</option>'; contextSelect.innerHTML = options; }
@@ -1312,6 +1320,31 @@
         async function joinHousehold() { const idInput = document.getElementById('join-household-id-input'); const householdId = idInput.value.trim(); if (!householdId) return showMessage("Error", "Por favor, introduce un ID de hogar válido."); processingOverlay.classList.remove('hidden'); processingText.textContent = "Uniéndote al hogar..."; try { const householdRef = doc(db, "households", householdId); const householdDoc = await getDoc(householdRef); if (!householdDoc.exists()) throw new Error("El hogar no existe."); const batch = writeBatch(db); const userRef = doc(db, "users", currentUser.uid); const memberData = { [`members.${currentUser.uid}`]: { displayName: currentUser.displayName, photoURL: currentUser.photoURL } }; batch.update(householdRef, memberData); batch.update(userRef, { householdId: householdId }); await batch.commit(); showMessage("Éxito", "Te has unido al hogar correctamente."); } catch (error) { console.error("Error joining household: ", error); showMessage("Error", `No se pudo unir al hogar. ${error.message}`); } finally { processingOverlay.classList.add('hidden'); } }
         async function leaveHousehold() { if (!userProfile || !userProfile.householdId) return; processingOverlay.classList.remove('hidden'); processingText.textContent = "Abandonando el hogar..."; try { const batch = writeBatch(db); const householdRef = doc(db, "households", userProfile.householdId); const userRef = doc(db, "users", currentUser.uid); batch.update(householdRef, { [`members.${currentUser.uid}`]: deleteField() }); batch.update(userRef, { householdId: null }); await batch.commit(); showMessage("Éxito", "Has abandonado el hogar."); } catch (error) { console.error("Error leaving household:", error); showMessage("Error", "No se pudo abandonar el hogar."); } finally { processingOverlay.classList.add('hidden'); } }
 
+        // --- NAME NORMALIZATION ---
+        async function normalizeProductName(originalName) {
+            if (productNameCache.has(originalName)) {
+                return productNameCache.get(originalName);
+            }
+
+            const prompt = `Normaliza el siguiente nombre de producto de supermercado a su forma más simple y común. Elimina detalles de marca, peso o variantes que no sean esenciales. Por ejemplo, para "COCA DE PATATA UN CORAZON COGO BALE", la respuesta debería ser "Coca de Patata". Para "CHOC VALOR NE70% S/A 125", la respuesta debería ser "Chocolate Negro 70% sin azúcar". Responde únicamente con el nombre normalizado. Nombre a normalizar: "${originalName}"`;
+            
+            try {
+                const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
+                const apiKey = firebaseConfig.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                const normalizedName = data.candidates[0].content.parts[0].text.trim();
+                productNameCache.set(originalName, normalizedName);
+                return normalizedName;
+            } catch (error) {
+                console.error(`Error normalizando "${originalName}":`, error);
+                return originalName; // Devolver el original si falla la IA
+            }
+        }
+
+
         // --- DATA MIGRATION ---
         async function migrateOldTickets() {
             const ticketsToUpdate = allPurchases.filter(t => t.dataVersion !== CURRENT_DATA_VERSION);
@@ -1321,69 +1354,76 @@
             }
 
             processingOverlay.classList.remove('hidden');
-            processingText.textContent = `Actualizando ${ticketsToUpdate.length} compra(s) antiguas...`;
-            
-            try {
-                const batch = writeBatch(db);
-                const productUpdates = new Map(); // Para asegurar que actualizamos cada producto solo una vez con la fecha más antigua
+            let processedCount = 0;
 
-                // 1. Iterar sobre los tickets a actualizar
-                ticketsToUpdate.forEach(ticket => {
-                    const ticketRef = doc(db, "tickets", ticket.id);
-                    const correctedProducts = ticket.productos.map(p => {
-                        const newProd = { ...p };
-                        // CORRECCIÓN: Asegurar que la cantidad es al menos 1
-                        if (!newProd.cantidad || newProd.cantidad <= 0) {
-                            newProd.cantidad = 1;
-                        }
-                        return newProd;
-                    });
-                    
-                    // Actualizar el ticket en el batch
-                    batch.update(ticketRef, { 
-                        productos: correctedProducts,
-                        dataVersion: CURRENT_DATA_VERSION 
-                    });
+            // Borrar productos antiguos para evitar duplicados
+            const oldProductsQuery = query(collection(db, "products"), where("userId", "==", currentUser.uid));
+            const oldProductsSnapshot = await getDocs(oldProductsQuery);
+            const deleteBatch = writeBatch(db);
+            oldProductsSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
+            await deleteBatch.commit();
+            console.log("Productos antiguos eliminados. Empezando migración...");
 
-                    // 2. Preparar actualizaciones para la colección 'products'
-                    correctedProducts.forEach(p => {
-                        const sanitizedProductName = p.nombre.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-                        const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
-                        
-                        // Queremos la fecha de compra más antigua para calcular la caducidad correctamente
-                        const existingUpdate = productUpdates.get(productDocId);
-                        if (!existingUpdate || new Date(ticket.fecha) < new Date(existingUpdate.purchaseDate)) {
-                            productUpdates.set(productDocId, {
-                                purchaseDate: ticket.fecha
-                            });
-                        }
-                    });
-                });
-
-                // 3. Añadir las actualizaciones de 'products' al batch
-                for (const [productId, updateData] of productUpdates.entries()) {
-                    const productRef = doc(db, "products", productId);
-                    batch.update(productRef, updateData);
-                }
+            for (const ticket of ticketsToUpdate) {
+                processedCount++;
+                processingText.textContent = `Procesando ticket ${processedCount} de ${ticketsToUpdate.length}...`;
                 
-                // 4. Ejecutar todas las operaciones
-                await batch.commit();
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const ticketRef = doc(db, "tickets", ticket.id);
+                        
+                        const newProducts = [];
+                        for (const p of ticket.productos) {
+                            const normalizedName = await normalizeProductName(p.nombre);
+                            const correctedProduct = {
+                                ...p,
+                                nombre: normalizedName,
+                                cantidad: p.cantidad || 1
+                            };
+                            newProducts.push(correctedProduct);
 
-                // 5. Forzar recarga de datos y refresco visual
-                await loadInitialData();
-                await loadProducts();
-                renderDashboard(); // Refresco explícito del dashboard
-                renderPantry();    // Refresco explícito de la despensa
+                            const sanitizedProductName = normalizedName.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+                            const productDocId = `${currentUser.uid}_${sanitizedProductName}`;
+                            const productRef = doc(db, "products", productDocId);
+                            const productDoc = await transaction.get(productRef);
 
-                showMessage("Éxito", `${ticketsToUpdate.length} compra(s) han sido actualizadas. Tus datos ahora son consistentes.`);
-
-            } catch (error) {
-                console.error("Error migrating data:", error);
-                showMessage("Error", `Ocurrió un error al actualizar los datos antiguos. Detalles: ${error.message}`);
-            } finally {
-                processingOverlay.classList.add('hidden');
+                            if (productDoc.exists()) {
+                                transaction.update(productRef, { lastUpdate: serverTimestamp() });
+                            } else {
+                                transaction.set(productRef, {
+                                    userId: currentUser.uid,
+                                    nombre: normalizedName,
+                                    categoria_principal: p.categoria_principal,
+                                    familia: p.familia,
+                                    subfamilia: p.subfamilia,
+                                    imageUrl: p.imageUrl || null,
+                                    pantryStatus: 'in_stock',
+                                    purchaseDate: ticket.fecha,
+                                    lastUpdate: serverTimestamp()
+                                });
+                            }
+                        }
+                        
+                        transaction.update(ticketRef, { 
+                            productos: newProducts,
+                            dataVersion: CURRENT_DATA_VERSION 
+                        });
+                    });
+                } catch (error) {
+                    console.error(`Error migrando el ticket ${ticket.id}:`, error);
+                    showMessage("Error", `Ocurrió un error al migrar el ticket ${ticket.id}. Revisa la consola para más detalles.`);
+                    processingOverlay.classList.add('hidden');
+                    return; 
+                }
             }
+
+            processingOverlay.classList.add('hidden');
+            showMessage("Éxito", `¡Migración completada! Se procesaron ${ticketsToUpdate.length} tickets.`);
+            // Forzar recarga de datos
+            await loadInitialData();
+            await loadProducts();
         }
+
 
         // --- APP INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', setupEventListeners);
