@@ -172,9 +172,8 @@
                                             <tr>
                                                 <th scope="col" class="px-6 py-3">Producto</th>
                                                 <th scope="col" class="px-6 py-3">Estado</th>
-                                                <th scope="col" class="px-6 py-3 text-center">Cantidad Total</th>
-                                                <th scope="col" class="px-6 py-3 text-center">Último Precio/ud</th>
-                                                <th scope="col" class="px-6 py-3 text-center">Precio Prom./ud</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Veces Comprado</th>
+                                                <th scope="col" class="px-6 py-3 text-center">Último Precio</th>
                                                 <th scope="col" class="px-6 py-3 text-center">Acciones</th>
                                             </tr>
                                         </thead>
@@ -275,7 +274,7 @@
           measurementId: "G-FW5ER1GV03"
         };
         const pexelsApiKey = 'UMGuZOf0eoG0PlIeMIXwbR5e6ErRqrCVKDvKWIG5S01DvvV7ZnaUsviz';
-        const CURRENT_DATA_VERSION = 4; // <-- Incrementamos la versión para forzar la nueva migración
+        const CURRENT_DATA_VERSION = 5; // <-- Incrementamos la versión para forzar la nueva migración
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -842,8 +841,8 @@
                     productData = { ...productData, cantidad: 1, peso, precio_por_kg, precio: peso * precio_por_kg };
                 } else {
                     const cantidad = parseInt(qtyInput.value, 10);
-                    const precio = parseFloat(priceInput.value);
-                    productData = { ...productData, cantidad, precio: cantidad * precio, peso: null, precio_por_kg: null };
+                    const precio_unitario = parseFloat(priceInput.value);
+                    productData = { ...productData, cantidad, precio: cantidad * precio_unitario, peso: null, precio_por_kg: null };
                 }
                 newProductos.push(productData);
             });
@@ -976,7 +975,7 @@
         function renderPantryListView(products) {
             const tbody = document.getElementById('products-table-body');
             if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">No se encontraron productos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">No se encontraron productos.</td></tr>';
                 return;
             }
 
@@ -991,28 +990,16 @@
                     .filter(prod => prod.nombre === p.nombre)
                     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-                let totalQuantity = 0;
-                let lastPrice = 0;
-                let avgPrice = 0;
-                let isWeighted = purchaseHistory.some(item => item.peso);
-
+                let lastPriceText = 'N/A';
                 if (purchaseHistory.length > 0) {
-                    if (isWeighted) {
-                        const weightedItems = purchaseHistory.filter(item => item.peso);
-                        totalQuantity = weightedItems.reduce((sum, item) => sum + (item.peso || 0), 0);
-                        lastPrice = weightedItems[0].precio_por_kg || 0;
-                        const totalCost = weightedItems.reduce((sum, item) => sum + (item.precio || 0), 0);
-                        avgPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
+                    const lastPurchase = purchaseHistory[0];
+                    if (lastPurchase.peso) {
+                        lastPriceText = `${(lastPurchase.precio_por_kg || 0).toFixed(2)} €/kg`;
                     } else {
-                        totalQuantity = purchaseHistory.reduce((sum, item) => sum + (item.cantidad || 1), 0);
-                        lastPrice = (purchaseHistory[0].precio || 0) / (purchaseHistory[0].cantidad || 1);
-                        const totalCost = purchaseHistory.reduce((sum, item) => sum + (item.precio || 0), 0);
-                        avgPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
+                        const unitPrice = (lastPurchase.precio || 0) / (lastPurchase.cantidad || 1);
+                        lastPriceText = `${unitPrice.toFixed(2)} €/ud`;
                     }
                 }
-                
-                const quantityUnit = isWeighted ? 'kg' : 'uds';
-                const priceUnit = isWeighted ? '€/kg' : '€/ud';
 
                 html += `
                     <tr class="bg-white border-b hover:bg-gray-50">
@@ -1023,16 +1010,15 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">${isInStock ? badge : '<span class="expiry-badge bg-gray-100 text-gray-800">Agotado</span>'}</td>
-                        <td class="px-6 py-4 text-center">${totalQuantity.toFixed(isWeighted ? 3 : 0)} ${quantityUnit}</td>
-                        <td class="px-6 py-4 text-center">${lastPrice.toFixed(2)}${priceUnit}</td>
-                        <td class="px-6 py-4 text-center">${avgPrice.toFixed(2)}${priceUnit}</td>
+                        <td class="px-6 py-4 text-center">${purchaseHistory.length}</td>
+                        <td class="px-6 py-4 text-center">${lastPriceText}</td>
                         <td class="px-6 py-4 text-center">
                             <button data-action="edit-product" data-id="${p.id}" class="text-indigo-600 hover:text-indigo-900 p-2"><i class="fas fa-pencil-alt"></i></button>
                             <button data-action="toggle-history" data-id="${p.id}" class="text-gray-500 hover:text-gray-800 p-2"><i class="fas fa-chevron-down"></i></button>
                         </td>
                     </tr>
                     <tr class="product-history-row" id="history-for-${p.id}">
-                        <td colspan="6" class="p-0">
+                        <td colspan="5" class="p-0">
                             <div class="p-4 bg-gray-50">
                                 <h4 class="font-semibold mb-2 text-sm">Historial de Compras para ${p.nombre}</h4>
                                 <table class="w-full text-xs text-left">
@@ -1042,7 +1028,7 @@
                                             <th class="px-4 py-2">Supermercado</th>
                                             <th class="px-4 py-2">Cantidad</th>
                                             <th class="px-4 py-2">Precio Total</th>
-                                            <th class="px-4 py-2">Precio/ud</th>
+                                            <th class="px-4 py-2">Precio Unitario</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1050,9 +1036,9 @@
                                             <tr class="border-b">
                                                 <td class="px-4 py-2">${item.fecha}</td>
                                                 <td class="px-4 py-2">${item.supermercado}</td>
-                                                <td class="px-4 py-2">${item.peso ? item.peso.toFixed(3) + ' kg' : (item.cantidad || 1)}</td>
+                                                <td class="px-4 py-2">${item.peso ? item.peso.toFixed(3) + ' kg' : (item.cantidad || 1) + ' uds'}</td>
                                                 <td class="px-4 py-2">${(item.precio || 0).toFixed(2)}€</td>
-                                                <td class="px-4 py-2">${item.precio_por_kg ? item.precio_por_kg.toFixed(2) + '€/kg' : ((item.precio || 0) / (item.cantidad || 1)).toFixed(2) + '€'}</td>
+                                                <td class="px-4 py-2">${item.precio_por_kg ? item.precio_por_kg.toFixed(2) + ' €/kg' : ((item.precio || 0) / (item.cantidad || 1)).toFixed(2) + ' €/ud'}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -1378,7 +1364,7 @@
                 return productNameCache.get(originalName);
             }
 
-            const prompt = `Normaliza el siguiente nombre de producto de supermercado a su forma más simple y común. Elimina detalles de marca, peso o variantes que no sean esenciales. Por ejemplo, para "COCA DE PATATA UN CORAZON COGO BALE", la respuesta debería ser "Coca de Patata". Para "CHOC VALOR NE70% S/A 125", la respuesta debería ser "Chocolate Negro 70% sin azúcar". Responde únicamente con el nombre normalizado. Nombre a normalizar: "${originalName}"`;
+            const prompt = `Normaliza el siguiente nombre de producto de supermercado a su forma más simple y común. Incluye el peso o volumen si forma parte del nombre (ej. "250G"). Elimina detalles de marca o variantes que no sean esenciales. Por ejemplo, para "COCA DE PATATA UN CORAZON COGO BALE", la respuesta debería ser "Coca de Patata". Para "QUESO BURGOS 250G", la respuesta debería ser "Queso Burgos 250g". Responde únicamente con el nombre normalizado. Nombre a normalizar: "${originalName}"`;
             
             try {
                 const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
@@ -1470,7 +1456,7 @@
                         updatedProductos.push({
                             ...p,
                             nombre: normalizedName,
-                            cantidad: p.cantidad || 1
+                            cantidad: p.peso ? 1 : (p.cantidad || 1) // Si tiene peso, la cantidad es 1
                         });
                     }
                     finalBatch.update(ticketRef, {
