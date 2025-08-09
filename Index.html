@@ -27,6 +27,7 @@
         .table-actions button:disabled { background-color: #d1d5db; cursor: not-allowed; }
         .premium-feature { position: relative; border: 2px dashed #d1d5db; padding: 2rem; border-radius: 0.5rem; margin-top: 1rem; }
         .premium-overlay { position: absolute; inset: 0; background-color: rgba(249, 250, 251, 0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-radius: 0.5rem; cursor: pointer; }
+        .premium-overlay.hidden { display: none; }
         #ads-banner.hidden { display: none; }
         #user-menu { transition: opacity 0.3s, transform 0.3s; }
         .nav-container { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
@@ -398,11 +399,17 @@
             }
             unsubscribeProfile = onSnapshot(userRef, (doc) => {
                 userProfile = { id: doc.id, ...doc.data() };
+                
+                // --- FOR TESTING PURPOSES ---
+                userProfile.plan = 'premium'; 
+                // --------------------------
+
                 shoppingList = userProfile.shoppingList || [];
                 renderAuthContainer(user, userProfile);
                 renderHouseholdTab(userProfile);
                 updateContextFilter(userProfile);
                 renderShoppingList();
+                checkPremiumFeatures(); // Call the new function here
                 loadInitialData(); 
                 loadProducts();
             });
@@ -1503,6 +1510,18 @@
             }
         }
 
+        function checkPremiumFeatures() {
+            const isPremium = userProfile && userProfile.plan === 'premium';
+            
+            // Toggle overlay on the price analysis tab
+            const priceAnalysisTab = document.getElementById('analisis-precios');
+            const overlay = priceAnalysisTab.querySelector('.premium-overlay');
+            if (isPremium) {
+                if(overlay) overlay.classList.add('hidden');
+            } else {
+                if(overlay) overlay.classList.remove('hidden');
+            }
+        }
 
         // --- APP INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', setupEventListeners);
