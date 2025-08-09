@@ -99,6 +99,7 @@
                             <button class="tab-button active" data-tab="analizar-ticket"><i class="fas fa-receipt mr-2"></i>Analizar Ticket</button>
                             <button class="tab-button" data-tab="mis-gastos"><i class="fas fa-chart-pie mr-2"></i>Mis Gastos</button>
                             <button class="tab-button" data-tab="mi-despensa"><i class="fas fa-box-open mr-2"></i>Mi Despensa</button>
+                            <button class="tab-button" data-tab="analisis-precios"><i class="fas fa-chart-line mr-2"></i>Análisis de Precios</button>
                             <button class="tab-button" data-tab="lista-compra"><i class="fas fa-list-check mr-2"></i>Lista de Compra</button>
                             <button class="tab-button" data-tab="chef-inteligente"><i class="fas fa-utensils mr-2"></i>Chef Inteligente</button>
                             <button class="tab-button" data-tab="mi-hogar"><i class="fas fa-users mr-2"></i>Mi Hogar</button>
@@ -184,6 +185,19 @@
                         </div>
                     </div>
 
+                    <!-- Pestaña: Análisis de Precios (Premium) -->
+                    <div id="analisis-precios" class="tab-content">
+                        <div class="premium-feature">
+                             <h2 class="text-xl font-semibold mb-4">Análisis Avanzado de Precios</h2>
+                             <p class="text-gray-600 mb-4">Aquí podrás ver la evolución de los precios de tus productos, comparar entre supermercados y mucho más.</p>
+                             <div class="premium-overlay upgrade-btn">
+                                 <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i>
+                                 <p class="font-semibold">Función Premium</p>
+                                 <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg">¡Actualiza ahora!</button>
+                             </div>
+                        </div>
+                    </div>
+
                     <!-- Pestaña: Lista de la Compra -->
                     <div id="lista-compra" class="tab-content">
                         <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -198,7 +212,7 @@
                     <div id="chef-inteligente" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Chef Inteligente 🧑‍🍳</h2> <p class="text-sm text-gray-600 mb-4">¿No sabes qué cocinar? Dime qué tipo de comida te apetece y te daré ideas basadas en los ingredientes que tienes en tu despensa.</p> <div class="flex gap-2 mb-4"> <input type="text" id="chef-query-input" placeholder="Ej: ¿Qué puedo hacer para cenar rápido?" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5"> <button id="chef-ask-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"> Preguntar </button> </div> <div id="chef-suggestions-container" class="mt-6 p-4 bg-gray-50 rounded-lg min-h-[100px]"> </div> </div> </div>
                     <div id="mi-hogar" class="tab-content"> <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Gestionar Mi Hogar</h2> <div id="household-management"> </div> </div> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Miembros del Hogar</h2> <ul id="household-members-list" class="space-y-3"> </ul> </div> </div> </div>
                     <div id="logros" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Mis Logros</h2> <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center mb-8"></div> <h2 class="text-xl font-semibold mb-4 border-t pt-6">Reto Semanal</h2> <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg"> <div class="flex items-center"> <i class="fas fa-bullseye fa-2x text-blue-500 mr-4"></i> <div> <h3 class="font-bold">Gasta un 10% menos en "Snacks"</h3> <p class="text-sm text-gray-600">¡Acepta el reto y mejora tus hábitos de ahorro!</p> </div> </div> </div> </div> </div>
-                    <div id="premium" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3> <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p> <div class="premium-overlay"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button> </div> </div> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3> <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p> <div class="premium-overlay"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg upgrade-btn">¡Actualiza ahora!</button> </div> </div> </div> </div>
+                    <div id="premium" class="tab-content"> <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"> <h2 class="text-xl font-semibold mb-4">Funciones Premium</h2> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo Avanzado de Análisis de Precios</h3> <p class="text-gray-600">Gráficos de evolución, comparador de supermercados y alertas de ofertas.</p> <div class="premium-overlay upgrade-btn"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg">¡Actualiza ahora!</button> </div> </div> <div class="premium-feature"> <h3 class="text-lg font-semibold mb-2">Módulo de Presupuestos Inteligentes</h3> <p class="text-gray-600">Define límites por categoría, recibe alertas en tiempo real y obtén recomendaciones de ahorro.</p> <div class="premium-overlay upgrade-btn"> <i class="fas fa-lock fa-2x text-yellow-500 mb-2"></i> <p class="font-semibold">Función Premium</p> <button class="mt-4 bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg">¡Actualiza ahora!</button> </div> </div> </div> </div>
                 </main>
             </div>
         </div>
@@ -1013,6 +1027,7 @@
                         <td class="px-6 py-4 text-center">${purchaseHistory.length}</td>
                         <td class="px-6 py-4 text-center">${lastPriceText}</td>
                         <td class="px-6 py-4 text-center">
+                            <button data-action="analyze-price" data-id="${p.id}" class="text-blue-600 hover:text-blue-900 p-2"><i class="fas fa-chart-line"></i></button>
                             <button data-action="edit-product" data-id="${p.id}" class="text-indigo-600 hover:text-indigo-900 p-2"><i class="fas fa-pencil-alt"></i></button>
                             <button data-action="toggle-history" data-id="${p.id}" class="text-gray-500 hover:text-gray-800 p-2"><i class="fas fa-chevron-down"></i></button>
                         </td>
@@ -1060,7 +1075,14 @@
             const productId = targetElement.dataset.id;
             const productName = targetElement.dataset.name;
 
-            if (action === 'mark-used' || action === 'mark-instock') {
+            if (action === 'analyze-price') {
+                if (userProfile && userProfile.plan === 'premium') {
+                    // Lógica para abrir el modal de análisis (futuro)
+                    showMessage("Próximamente", "El análisis de precios estará disponible para usuarios Premium.");
+                } else {
+                    showModal('upgrade-modal');
+                }
+            } else if (action === 'mark-used' || action === 'mark-instock') {
                 const newStatus = action === 'mark-used' ? 'out_of_stock' : 'in_stock';
                 const productRef = doc(db, "products", productId);
                 await updateDoc(productRef, { pantryStatus: newStatus });
