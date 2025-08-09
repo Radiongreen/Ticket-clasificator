@@ -1286,15 +1286,17 @@
         // --- UTILITY & OTHER FUNCTIONS ---
         function buildAIPrompt() {
             return `
-                Analiza la imagen de este ticket de supermercado. Extrae la información en un formato JSON estricto.
+                Eres un experto analista de datos de supermercado. Tu misión es extraer con la máxima precisión la información de este ticket en un formato JSON estricto.
 
-                Reglas MUY IMPORTANTES para la extracción de productos:
-                1.  **Limpieza de Nombre:** Ignora caracteres iniciales como "-/" en los nombres de los productos. "-/Pechuga fileteada" debe ser "Pechuga fileteada".
-                2.  **Productos por Unidad:** Si un producto no tiene una cantidad explícita (ej. "QUESO BURGOS 250G"), su cantidad es 1 y los campos de peso son nulos.
-                3.  **Cantidad Mínima:** El campo "cantidad" en el JSON debe ser SIEMPRE un número entero igual o mayor que 1. Nunca puede ser 0.
-                4.  **Productos por Peso (Detallado):** Si un producto se vende por peso (ej. "PEPINO FRANC BALEAR", "0,260kg", "2,95Eu/kg", "0,77"), debes extraer TODOS los detalles. El JSON para este producto debe ser: {"nombre": "Pepino Franc Balear", "cantidad": 1, "precio": 0.77, "peso": 0.260, "precio_por_kg": 2.95}. La 'cantidad' es 1 (una unidad de compra), pero 'peso' y 'precio_por_kg' contienen los detalles. Si no es un producto por peso, estos campos deben ser null.
+                Reglas de Extracción:
+                1.  **Limpieza de Nombre:** Ignora caracteres irrelevantes al inicio de los nombres, como "-/". Por ejemplo, "-/Filete de salmón" debe ser "Filete de salmón".
+                2.  **Productos por Unidad:** Para productos vendidos por unidad (ej. "ZANAHORIA 1 KG.", "QUESO BURGOS 250G"), la "cantidad" es el número de unidades compradas (si no se especifica, es 1). Los campos "peso" y "precio_por_kg" para estos productos DEBEN ser null.
+                3.  **Productos por Peso:** Para productos vendidos a granel (donde el precio depende del peso), la "cantidad" siempre es 1 (representa una única transacción de pesado). DEBES rellenar los campos "peso" (en kg) y "precio_por_kg". El campo "precio" debe ser el precio total final de esa pesada.
+                    - Ejemplo: Una línea "PEPINO FRANC BALEAR" seguida de "0,260kg 2,95Eu/kg" con un total de "0,77" se extrae como:
+                      { "nombre": "Pepino Franc Balear", "cantidad": 1, "precio": 0.77, "peso": 0.260, "precio_por_kg": 2.95, ... }
+                4.  **Cálculo Implícito:** Si el ticket muestra el peso y el precio total pero no el precio/kg, calcúlalo (precio / peso).
 
-                El JSON debe tener la siguiente estructura:
+                El JSON debe tener la siguiente estructura EXACTA:
                 {
                   "supermercado": "string", "direccion_supermercado": "string", "fecha": "string",
                   "productos": [ { "nombre": "string", "cantidad": number, "precio": number, "categoria_principal": "string", "familia": "string", "subfamilia": "string", "peso": number | null, "precio_por_kg": number | null } ],
@@ -1364,7 +1366,7 @@
                 return productNameCache.get(originalName);
             }
 
-            const prompt = `Normaliza el siguiente nombre de producto de supermercado a su forma más simple y común. Incluye el peso o volumen si forma parte del nombre (ej. "250G"). Elimina detalles de marca o variantes que no sean esenciales. Por ejemplo, para "COCA DE PATATA UN CORAZON COGO BALE", la respuesta debería ser "Coca de Patata". Para "QUESO BURGOS 250G", la respuesta debería ser "Queso Burgos 250g". Responde únicamente con el nombre normalizado. Nombre a normalizar: "${originalName}"`;
+            const prompt = `Normaliza el siguiente nombre de producto de supermercado a su forma más simple y común. CONSERVA el peso o volumen si es parte del nombre (ej. "250G"). Elimina detalles de marca irrelevantes o texto promocional. Por ejemplo, para "COCA DE PATATA UN CORAZON COGO BALE", la respuesta debe ser "Coca de Patata". Para "QUESO BURGOS 250G", la respuesta debe ser "Queso Burgos 250g". Para "-/Filete de salmón", la respuesta debe ser "Filete de salmón". Responde únicamente con el nombre normalizado. Nombre a normalizar: "${originalName}"`;
             
             try {
                 const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
